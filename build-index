@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+# coding=utf-8
+
+import argparse
+import zhedod.index_builder as builder
+
+import sys
+
+
+def main(raw_args):
+    parser = argparse.ArgumentParser(description='Build index for dictionary')
+    parser.add_argument('--dict',
+                        default='cedict_1_0_ts_utf-8_mdbg.txt.gz',
+                        help='Dictionary file; CEDICT format; text or gzip-compressed')
+    parser.add_argument('--out',
+                        default='cedict.index',
+                        help='Output file')
+    args = parser.parse_args(raw_args)
+    builder.build(args.dict)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

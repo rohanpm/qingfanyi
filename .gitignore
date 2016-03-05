@@ -1,1 +1,5 @@
 .idea/
+*.pyc
+zhedod.dict
+zhedod.index
+
