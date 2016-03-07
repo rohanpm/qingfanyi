@@ -1,0 +1,171 @@
+#!/usr/bin/env python
+# coding=utf-8
+
+import signal
+import re
+import pyatspi
+from pyatspi import Registry
+
+# NOTE: keybinder MUST be imported after pyatspi to avoid hitting an assert in pyatspi
+import keybinder
+
+import gtk
+import gtk.gdk
+
+from zhedod.dict import open_dict
+
+CJK_TEXT_PATTERN = re.compile(ur'''
+     [\u4e00-\u9fff]          # CJK Unified Ideographs
+   | [\u3400-\u4dff]          # CJK Unified Ideographs Extension A
+   | [\U00020000-\U0002a6df]  # CJK Unified Ideographs Extension B
+   | [\uf900-\ufaff]          # CJK Compatibility Ideographs
+   | [\U0002f800-\U0002fa1f]  # CJK Compatibility Ideographs Supplement
+''', re.VERBOSE)
+
+def text_contains_cjk(text):
+    search = CJK_TEXT_PATTERN.search(text)
+    #return search is not None
+    return True
+
+def extract_texts(window):
+    out = []
+
+    def collect_chinese(accessible_object, _):
+        text_object = get_text_object(accessible_object)
+        if not text_object:
+            return
+
+        text = text_object.getText(0, -1)
+        # NOTE: what if app is not using utf-8?
+        text = unicode(text, 'utf-8')
+        if not text_contains_cjk(text):
+            return
+
+        out.append((text, text_object, accessible_object))
+
+    visit_visible(window, collect_chinese)
+
+    return out
+
+
+def add_rect(parsed, text_object):
+    out = []
+    for p in parsed:
+        (offset, chars, records) = p
+        end = offset + len(chars)
+        rect = text_object.getRangeExtents(offset, end, 0)
+        out.append((offset, chars, records, rect))
+    return out
+
+
+def process_chinese(window, d):
+    targets = extract_texts(window)
+    out = []
+
+    for (text, text_object, accessible_object) in targets:
+        # parse it
+        parsed = d.parse_text(text)
+        parsed = add_rect(parsed, text_object)
+        out.extend(parsed)
+        print "FOUND TEXT: %s\n%s" % (text, parsed)
+        print accessible_object.queryComponent().getMDIZOrder()
+
+    return out
+
+
+def pixbuf_from_screen():
+    # FIXME: multi-monitor?
+    w = gtk.gdk.get_default_root_window()
+    sz = w.get_size()
+    pb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB,False, 8, sz[0], sz[1])
+    pb = pb.get_from_drawable(w, w.get_colormap(), 0, 0, 0, 0, sz[0], sz[1])
+    assert pb
+    return pb
+
+
+def on_shortcut(d):
+    window = active_window()
+    if not window:
+        print "No active window.  Do nothing."
+        return
+
+    blocks = process_chinese(window, d)
+
+    screen_pb = pixbuf_from_screen()
+    width = screen_pb.get_width()
+    height = screen_pb.get_height()
+
+    copy_pb = []
+    for (_, _, _, rect) in blocks:
+        sub = screen_pb.subpixbuf(*rect).copy()
+        copy_pb.append((sub, rect))
+
+    mod = screen_pb.composite_color_simple(width, height, gtk.gdk.INTERP_NEAREST, 127, 2, 0, 0)
+
+    for (pb, rect) in copy_pb:
+        #     def copy_area(src_x, src_y, width, height, dest_pixbuf, dest_x, dest_y)
+        (x, y, w, h) = rect
+        pb.copy_area(0, 0, w, h, mod, x, y)
+
+    img = gtk.Image()
+    img.set_from_pixbuf(mod)
+    img.show()
+
+    win = gtk.Window()
+    win.add(img)
+    win.set_resizable(False)
+    win.set_decorated(False)
+    win.show()
+    win.fullscreen()
+
+def active_window():
+    desktop = pyatspi.Registry.getDesktop(0)
+    for app in desktop:
+        for window in app:
+            if window.getState().contains(pyatspi.STATE_ACTIVE):
+                return window
+
+
+def is_visible(accessible_object):
+    """
+    Returns true if accessible_object appears to be a visible component on the screen.
+
+    Note that invisible components may still have visible children.
+    """
+    try:
+        c = accessible_object.queryComponent()
+        (w, h) = c.getSize()
+        # anything smaller than (10,10) is invisible or too small to work with
+        return w > 10 and h > 10
+    except NotImplementedError:
+        return False
+
+
+def get_text_object(accessible_object):
+    try:
+        return accessible_object.queryText()
+    except NotImplementedError:
+        return None
+
+
+def visit_visible(root, callback, level=0):
+    if is_visible(root):
+        callback(root, level)
+
+    for child in root:
+        visit_visible(child, callback, level + 1)
+
+
+def main():
+    with open_dict() as d:
+        keystr = "<Ctrl><Alt>z"
+        assert keybinder.bind(keystr, on_shortcut, d)
+        signal.signal(signal.SIGINT, Registry.stop)
+        signal.signal(signal.SIGTERM, Registry.stop)
+        print "Entering loop"
+        Registry.start()
+        print "Done..."
+
+
+if __name__ == '__main__':
+    main()

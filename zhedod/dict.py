@@ -61,3 +61,31 @@ class Dict(object):
             out.append(Record.from_line(line))
 
         return out
+
+    def parse_text(self, text):
+        """
+        Parses a string and returns all records looked up from the dictionary.
+        The returned value is a list of:
+
+        (offset, matched, [records])
+        """
+        out = []
+        offset = 0
+        while text:
+            prefs = self.prefixes(text)
+
+            # Get the longest match
+            prefs = sorted(prefs, key=len, reverse=True)
+
+            advance = 1
+
+            if prefs:
+                pref = prefs[0]
+                records = self[pref]
+                out.append((offset, pref, records))
+                advance = len(pref)
+
+            offset += advance
+            text = text[advance:]
+
+        return out
