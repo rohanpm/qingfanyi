@@ -3,6 +3,8 @@
 
 import signal
 import re
+import os
+import sys
 import pyatspi
 from pyatspi import Registry
 
@@ -14,6 +16,8 @@ import gtk.gdk
 
 from zhedod.dict import open_dict
 
+DEBUG = 'ZHEDOD_DEBUG' in os.environ and os.environ['ZHEDOD_DEBUG'] == '1'
+
 CJK_TEXT_PATTERN = re.compile(ur'''
      [\u4e00-\u9fff]          # CJK Unified Ideographs
    | [\u3400-\u4dff]          # CJK Unified Ideographs Extension A
@@ -22,10 +26,15 @@ CJK_TEXT_PATTERN = re.compile(ur'''
    | [\U0002f800-\U0002fa1f]  # CJK Compatibility Ideographs Supplement
 ''', re.VERBOSE)
 
+def debug(msg):
+    if DEBUG:
+        sys.stdout.flush()
+        sys.stderr.write('debug: %s\n' % msg)
+        sys.stderr.flush()
+
 def text_contains_cjk(text):
     search = CJK_TEXT_PATTERN.search(text)
-    #return search is not None
-    return True
+    return search is not None
 
 def extract_texts(window):
     out = []
@@ -67,18 +76,20 @@ def process_chinese(window, d):
         parsed = d.parse_text(text)
         parsed = add_rect(parsed, text_object)
         out.extend(parsed)
-        print "FOUND TEXT: %s\n%s" % (text, parsed)
-        print accessible_object.queryComponent().getMDIZOrder()
+        debug("FOUND TEXT: %s\n%s" % (text, parsed))
 
     return out
 
 
-def pixbuf_from_screen():
-    # FIXME: multi-monitor?
-    w = gtk.gdk.get_default_root_window()
-    sz = w.get_size()
-    pb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB,False, 8, sz[0], sz[1])
-    pb = pb.get_from_drawable(w, w.get_colormap(), 0, 0, 0, 0, sz[0], sz[1])
+def pixbuf_from_screen(rect):
+    # Regarding multi-monitor, my testing indicates that this root window covers _all_
+    # the active monitors.
+    root = gtk.gdk.get_default_root_window()
+    debug("root: %s" % root)
+    debug("root extents: %s" % root.get_frame_extents())
+    (x, y, w, h) = rect
+    pb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, w, h)
+    pb = pb.get_from_drawable(root, root.get_colormap(), x, y, 0, 0, w, h)
     assert pb
     return pb
 
@@ -86,21 +97,29 @@ def pixbuf_from_screen():
 def on_shortcut(d):
     window = active_window()
     if not window:
-        print "No active window.  Do nothing."
+        debug('No active window.  Do nothing.')
         return
+
+    window_c = window.queryComponent()
+    active_window_rect = window_c.getExtents(0)
+    debug('active window: %s' % active_window_rect)
+
+    (window_x, window_y, width, height) = active_window_rect
 
     blocks = process_chinese(window, d)
 
-    screen_pb = pixbuf_from_screen()
-    width = screen_pb.get_width()
-    height = screen_pb.get_height()
+    src_pb = pixbuf_from_screen(active_window_rect)
 
     copy_pb = []
     for (_, _, _, rect) in blocks:
-        sub = screen_pb.subpixbuf(*rect).copy()
+        (x, y, w, h) = rect
+        x -= window_x
+        y -= window_y
+        rect = (x, y, w, h)
+        sub = src_pb.subpixbuf(*rect).copy()
         copy_pb.append((sub, rect))
 
-    mod = screen_pb.composite_color_simple(width, height, gtk.gdk.INTERP_NEAREST, 127, 2, 0, 0)
+    mod = src_pb.composite_color_simple(width, height, gtk.gdk.INTERP_NEAREST, 127, 2, 0, 0)
 
     for (pb, rect) in copy_pb:
         #     def copy_area(src_x, src_y, width, height, dest_pixbuf, dest_x, dest_y)
@@ -115,8 +134,8 @@ def on_shortcut(d):
     win.add(img)
     win.set_resizable(False)
     win.set_decorated(False)
+    win.move(window_x, window_y)
     win.show()
-    win.fullscreen()
 
 def active_window():
     desktop = pyatspi.Registry.getDesktop(0)
