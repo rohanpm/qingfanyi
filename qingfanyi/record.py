@@ -34,6 +34,9 @@ class Record(object):
                                    self.pinyin.encode('utf-8'),
                                    "\n  ".join(self.en_US))
 
+    def __repr__(self):
+        return 'Record%s' % self.__dict__.__repr__()
+
     @staticmethod
     def from_line(line):
         out = Record()

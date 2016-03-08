@@ -2,7 +2,7 @@
 # coding=utf-8
 
 import argparse
-from zhedod.dict import open_dict
+from qingfanyi.dict import open_dict
 import sys
 
 

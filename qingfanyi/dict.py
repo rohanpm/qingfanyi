@@ -3,12 +3,15 @@ from contextlib import contextmanager
 import marisa_trie
 
 import mmap
+import os.path
 
-from zhedod.record import Record
+from qingfanyi.match import Match
+from qingfanyi.record import Record
 
-INDEX_FILENAME = 'zhedod.index'
-DICT_FILENAME = 'zhedod.dict'
+_DATA_DIR = os.path.expanduser('~/.qingfanyi')
 
+INDEX_FILENAME = os.path.join(_DATA_DIR, 'qingfanyi.index')
+DICT_FILENAME = os.path.join(_DATA_DIR, 'qingfanyi.dict')
 
 @contextmanager
 def open_dict():
@@ -65,9 +68,7 @@ class Dict(object):
     def parse_text(self, text):
         """
         Parses a string and returns all records looked up from the dictionary.
-        The returned value is a list of:
-
-        (offset, matched, [records])
+        The returned value is a list of Match objects.
         """
         out = []
         offset = 0
@@ -82,10 +83,11 @@ class Dict(object):
             if prefs:
                 pref = prefs[0]
                 records = self[pref]
-                out.append((offset, pref, records))
+                out.append(Match(offset, pref, records))
                 advance = len(pref)
 
             offset += advance
             text = text[advance:]
 
         return out
+
