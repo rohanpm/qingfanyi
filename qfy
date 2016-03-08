@@ -44,11 +44,12 @@ def on_shortcut(dic):
     img.set_from_pixbuf(mod)
     img.show()
 
-    win = gtk.Window()
+    win = gtk.Window(gtk.WINDOW_POPUP)
     win.add(img)
     win.set_resizable(False)
     win.set_decorated(False)
     win.move(window_x, window_y)
+    win.resize(width, height)
     win.show()
 
 
