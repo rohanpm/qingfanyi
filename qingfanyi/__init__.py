@@ -1,4 +1,5 @@
 # coding=utf-8
+import datetime
 import os
 import sys
 
@@ -14,5 +15,5 @@ def debug(msg):
     """
     if _DEBUG:
         sys.stdout.flush()
-        sys.stderr.write('debug: %s\n' % msg)
+        sys.stderr.write('debug: %s: %s\n' % (datetime.datetime.now(), msg))
         sys.stderr.flush()
