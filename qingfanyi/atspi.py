@@ -1,6 +1,8 @@
 # coding=utf-8
 import pyatspi
 
+from gi.repository import Gdk
+
 from qingfanyi import debug
 
 
@@ -9,10 +11,27 @@ def active_window():
     :return: the AT-SPI handle for the currently active window, or None.
     """
     desktop = pyatspi.Registry.getDesktop(0)
+    atspi_window = None
     for app in desktop:
         for window in app:
-            if window.getState().contains(pyatspi.STATE_ACTIVE):
-                return window
+            state = window.getState()
+            debug('  window %s state %s' % (window, state.states))
+            if state.contains(pyatspi.STATE_ACTIVE):
+                atspi_window = window
+                break
+
+    if not atspi_window:
+        debug('no active atspi window.')
+        return None, None
+
+    gdk_window = Gdk.Screen.get_default().get_active_window()
+    if not gdk_window:
+        debug('no active gdk window.')
+        return None, None
+
+    gdk_window.invalidate_rect(None, True)
+
+    return atspi_window, gdk_window
 
 
 def is_visible(accessible_object):

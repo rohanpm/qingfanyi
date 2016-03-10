@@ -1,5 +1,7 @@
 # coding=utf-8
-import gtk
+#import gtk
+
+from gi.repository import Gdk
 
 from qingfanyi import debug
 from qingfanyi.atspi import get_text_object, visit_visible
@@ -7,11 +9,28 @@ from qingfanyi.text import may_contain_chinese
 
 
 class Snapshot(object):
-    def __init__(self, window, dic):
-        self.matches = _process_chinese(window, dic)
-        self.rect = window.queryComponent().getExtents(0)
-        debug('snapshot window: %s' % self.rect)
-        self.pixbuf = _pixbuf_from_screen(self.rect)
+    def __init__(self, accessible_window, gdk_window, dic):
+        self.matches = _process_chinese(accessible_window, dic)
+
+        # getExtents returns some helper class.  I would rather unpack to a simple
+        # tuple so it can be compared with rects from other contexts
+        (x, y, w, h) = accessible_window.queryComponent().getExtents(0)
+        self.rect = (x, y, w, h)
+
+        frame = gdk_window.get_frame_extents()
+        frame = (frame.x, frame.y, frame.width, frame.height)
+        debug('acc window %s, gdk window %s' % (self.rect, frame))
+        if self.rect != frame:
+            raise ValueError(('AT-SPI and GDK reportBed different co-ordinates for '
+                              'active window: %s vs %s' % (self.rect, frame)))
+
+        (x, y, w, h) = gdk_window.get_geometry()
+        self.geometry = (x, y, w, h)
+        debug('taking snapshot of %s' % gdk_window)
+        self.pixbuf = Gdk.pixbuf_get_from_window(gdk_window, 0, 0, w, h)
+        if not self.pixbuf:
+            raise IOError('Could not get pixbuf from active window')
+        debug('snapshot is %s' % self.pixbuf)
 
 
 def _extract_texts(window):
@@ -46,14 +65,3 @@ def _process_chinese(window, dic):
         debug("found text: %s\n%s" % (text, matched))
 
     return out
-
-
-def _pixbuf_from_screen(rect):
-    root = gtk.gdk.get_default_root_window()
-    debug("root: %s" % root)
-    debug("root extents: %s" % root.get_frame_extents())
-    (x, y, w, h) = rect
-    pb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, w, h)
-    pb = pb.get_from_drawable(root, root.get_colormap(), x, y, 0, 0, w, h)
-    assert pb
-    return pb

@@ -1,63 +1,44 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-import signal
-
+from gi.repository import Keybinder
 from pyatspi import Registry
-# NOTE: keybinder MUST be imported after pyatspi to avoid hitting an assert in pyatspi
-import keybinder
-
-import gtk
-import gtk.gdk
 
 from qingfanyi import debug
 from qingfanyi.atspi import active_window
 from qingfanyi.dict import open_dict
 from qingfanyi.snapshot import Snapshot
+from qingfanyi.translate_window import TranslateWindow
 
-def on_shortcut(dic):
-    window = active_window()
-    if not window:
+
+def on_event(widget, event):
+    debug('%s %s' % (widget, event))
+
+import signal
+
+def on_shortcut(event, dic):
+    debug('shortcut triggered: %s' % event)
+
+    (accessible_window, gdk_window) = active_window()
+    if not accessible_window:
         debug('No active window.  Do nothing.')
         return
 
-    snapshot = Snapshot(window, dic)
-    (window_x, window_y, width, height) = snapshot.rect
-    src_pb = snapshot.pixbuf
+    debug('active: %s' % accessible_window)
 
-    copy_pb = []
-    for m in snapshot.matches:
-        (x, y, w, h) = m.rect
-        x -= window_x
-        y -= window_y
-        rect = (x, y, w, h)
-        sub = src_pb.subpixbuf(*rect).copy()
-        copy_pb.append((sub, rect))
+    debug('taking snapshot')
+    snapshot = Snapshot(accessible_window, gdk_window, dic)
 
-    mod = src_pb.composite_color_simple(width, height, gtk.gdk.INTERP_NEAREST, 127, 2, 0, 0)
-
-    for (pb, rect) in copy_pb:
-        (x, y, w, h) = rect
-        pb.copy_area(0, 0, w, h, mod, x, y)
-
-    img = gtk.Image()
-    img.set_from_pixbuf(mod)
-    img.show()
-
-    win = gtk.Window(gtk.WINDOW_POPUP)
-    win.add(img)
-    win.set_resizable(False)
-    win.set_decorated(False)
-    win.move(window_x, window_y)
-    win.resize(width, height)
-    win.show()
-
+    debug('creating translate window')
+    translate_win = TranslateWindow(snapshot)
+    translate_win.show()
 
 
 def main():
     with open_dict() as d:
         keystr = "<Ctrl><Alt>z"
-        assert keybinder.bind(keystr, on_shortcut, d)
+        Keybinder.init()
+        assert Keybinder.bind(keystr, on_shortcut, d)
         signal.signal(signal.SIGINT, Registry.stop)
         signal.signal(signal.SIGTERM, Registry.stop)
         print "Entering loop"
