@@ -44,24 +44,9 @@ class Translate(object):
             self.condvar.notify()
             self.condvar.release()
 
-    def get_active_window_retry(self, i=5):
-        (accessible_window, gdk_window) = active_window()
-        if not accessible_window:
-            if i == 0:
-                debug('no active window after several tries')
-                return
-            time.sleep(0.1)
-            return self.get_active_window_retry(i-1)
-
-        if i != 5:
-            debug(' multiple attempts needed to get active window!')
-
-        return (accessible_window, gdk_window)
-
-
     def run(self):
         debug('translate running...')
-        (accessible_window, gdk_window) = self.get_active_window_retry()
+        (accessible_window, gdk_window) = active_window()
         if not accessible_window:
             debug('No active window.  Do nothing.')
             return
@@ -75,8 +60,8 @@ class Translate(object):
         translate_win = TranslateWindow(snapshot)
         translate_win.show()
 
-        translate_win.connect('hide', lambda *_: Gtk.main_quit())
         # nested loop to make run() blocking
+        translate_win.connect('hide', lambda *_: Gtk.main_quit())
         Gtk.main()
 
     def run_event_loop(self):
@@ -88,6 +73,7 @@ class Translate(object):
         self.dic = None
 
 _INSTANCE = None
+
 
 def run():
     if not _INSTANCE:
