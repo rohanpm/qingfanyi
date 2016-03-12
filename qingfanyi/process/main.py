@@ -39,7 +39,10 @@ def run():
             break
 
         debug('invoke translate')
-        translate_pool.apply(_run_translate_process)
+        try:
+            translate_pool.apply(_run_translate_process)
+        except StandardError as e:
+            debug('failed: %s' % e)
 
     debug('exiting normally')
     keybind_process.terminate()

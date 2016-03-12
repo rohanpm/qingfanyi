@@ -1,5 +1,5 @@
 # coding=utf-8
-from Queue import Queue
+import Queue
 
 from gi.repository import Keybinder
 from gi.repository import Gtk

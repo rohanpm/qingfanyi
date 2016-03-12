@@ -21,7 +21,7 @@ class Snapshot(object):
         frame = (frame.x, frame.y, frame.width, frame.height)
         debug('acc window %s, gdk window %s' % (self.rect, frame))
         if self.rect != frame:
-            raise ValueError(('AT-SPI and GDK reportBed different co-ordinates for '
+            raise ValueError(('AT-SPI and GDK reported different co-ordinates for '
                               'active window: %s vs %s' % (self.rect, frame)))
 
         (x, y, w, h) = gdk_window.get_geometry()
