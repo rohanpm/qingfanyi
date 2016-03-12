@@ -1,50 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-
-from gi.repository import Keybinder
-from pyatspi import Registry
-
-from qingfanyi import debug
-from qingfanyi.atspi import active_window
-from qingfanyi.dict import open_dict
-from qingfanyi.snapshot import Snapshot
-from qingfanyi.translate_window import TranslateWindow
-
-
-def on_event(widget, event):
-    debug('%s %s' % (widget, event))
-
-import signal
-
-def on_shortcut(event, dic):
-    debug('shortcut triggered: %s' % event)
-
-    (accessible_window, gdk_window) = active_window()
-    if not accessible_window:
-        debug('No active window.  Do nothing.')
-        return
-
-    debug('active: %s' % accessible_window)
-
-    debug('taking snapshot')
-    snapshot = Snapshot(accessible_window, gdk_window, dic)
-
-    debug('creating translate window')
-    translate_win = TranslateWindow(snapshot)
-    translate_win.show()
-
-
-def main():
-    with open_dict() as d:
-        keystr = "<Ctrl><Alt>z"
-        Keybinder.init()
-        assert Keybinder.bind(keystr, on_shortcut, d)
-        signal.signal(signal.SIGINT, Registry.stop)
-        signal.signal(signal.SIGTERM, Registry.stop)
-        print "Entering loop"
-        Registry.start()
-        print "Done..."
-
+import qingfanyi.process.main
 
 if __name__ == '__main__':
-    main()
+    qingfanyi.process.main.run()
