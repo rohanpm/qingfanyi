@@ -20,12 +20,20 @@ class Snapshot(object):
         if not self.pixbuf:
             raise IOError('Could not get pixbuf from active window')
 
-        self.all_matches = _process_chinese(accessible_window, dic)
-        self.matches = [m
-                        for m in self.all_matches
-                        if _rect_within(self.geometry, m.rect)]
+        self.accessible_window = accessible_window
+        self.dic = dic
+        self._matches = None
 
-        debug('filtered %d matches to %d' % (len(self.all_matches), len(self.matches)))
+
+    @property
+    def matches(self):
+        if not self._matches:
+            all_matches = _process_chinese(self.accessible_window, self.dic)
+            self._matches = [m
+                             for m in all_matches
+                             if _rect_within(self.geometry, m.rect)]
+            debug('filtered %d matches to %d' % (len(all_matches), len(self._matches)))
+        return self._matches
 
 
 def _extract_texts(window):
