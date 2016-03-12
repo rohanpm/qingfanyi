@@ -8,7 +8,7 @@ class TranslateWindow(Gtk.Window):
     def __init__(self, snapshot):
         super(TranslateWindow, self).__init__(Gtk.WindowType.POPUP)
 
-        (window_x, window_y, width, height) = snapshot.rect
+        (window_x, window_y, width, height) = snapshot.geometry
         src_pb = snapshot.pixbuf
 
         copy_pb = []
@@ -17,8 +17,10 @@ class TranslateWindow(Gtk.Window):
             x -= window_x
             y -= window_y
             rect = (x, y, w, h)
-            sub = src_pb.new_subpixbuf(*rect).copy()
-            copy_pb.append((sub, rect))
+            sub = src_pb.new_subpixbuf(*rect)
+            if sub:
+                sub = sub.copy()
+                copy_pb.append((sub, rect))
 
         mod = src_pb.composite_color_simple(width, height, GdkPixbuf.InterpType.NEAREST,
                                             127, 2, 0, 0)

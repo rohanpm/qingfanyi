@@ -14,6 +14,11 @@ def debug(msg):
                 newline)
     """
     if _DEBUG:
+        if hasattr(msg, '__call__'):
+            msg = msg()
         sys.stdout.flush()
-        sys.stderr.write('debug: %s: %s\n' % (datetime.datetime.now(), msg))
+        s = 'debug: %s: %s\n' % (datetime.datetime.now(), msg)
+        if isinstance(s, unicode):
+            s = s.encode('utf-8', errors='replace')
+        sys.stderr.write(s)
         sys.stderr.flush()
