@@ -51,16 +51,18 @@ def _extract_texts(window):
 
 
 def _process_chinese(window, dic):
-    debug('extracting texts from window...')
+    debug('BEGIN extracting texts from window...')
     targets = _extract_texts(window)
-    debug('...done extracting texts')
+    debug('END extracting texts')
     out = []
 
+    debug('BEGIN parsing texts')
     for (text, text_object, accessible_object) in targets:
         matched = dic.parse_text(text)
         [m.init_rect(text_object) for m in matched]
         out.extend(matched)
         debug("found text: %s\n%s" % (text, matched))
+    debug('END parsing texts')
 
     return out
 
