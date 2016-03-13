@@ -1,13 +1,11 @@
 # coding=utf-8
-import pyatspi
 import time
 
-from gi.repository import Gdk
-from gi.repository.Atspi import StateType
-from pyatspi.utils import stateToString
+import pyatspi
+from gi.repository import Gdk, GLib
 from pyatspi.state import STATE_SHOWING
-from qingfanyi import debug
 
+from qingfanyi import debug
 
 
 def active_window(attempts=8):
@@ -41,34 +39,30 @@ def active_window(attempts=8):
                       gdk_frame_rect.width, gdk_frame_rect.height)
     gdk_geom_rect = gdk_window.get_geometry()
 
-    atspi_windows = _atspi_active_windows()
-    matching_windows = [x for x in atspi_windows
-                        if _geometry_match(x, gdk_frame_rect, gdk_geom_rect)]
+    debug('for...')
+    for win in _atspi_active_windows():
+        debug('  iter')
+        if _geometry_match(win, gdk_frame_rect, gdk_geom_rect):
+            return win, gdk_window
 
-    if not matching_windows:
-        debug('no active atspi window matching GDK geometry')
-        return maybe_fail()
-
-    if len(matching_windows) > 1:
-        debug('too many matching atspi windows!')
-        return maybe_fail()
-
-    return matching_windows[0], gdk_window
+    debug('no active atspi window matching GDK geometry')
+    return maybe_fail()
 
 def _atspi_active_windows():
     """
     :return: all windows AT-SPI claims are active (there can be more than one)
     """
     desktop = pyatspi.Registry.getDesktop(0)
-    out = []
     for app in desktop:
-        for window in app:
-            state = window.getState()
-            debug('  window %s state %s' % (window, state.states))
-            if state.contains(pyatspi.STATE_ACTIVE):
-                out.append(window)
-                debug('    ACTIVE')
-    return out
+        try:
+            for window in app:
+                state = window.getState()
+                debug('  window %s state %s' % (window, state.states))
+                if state.contains(pyatspi.STATE_ACTIVE):
+                    debug('    ACTIVE')
+                    yield window
+        except GLib.Error as e:
+            debug('error from app %s: %s' % (app, e))
 
 
 def _geometry_match(accessible_window, frame, geom):

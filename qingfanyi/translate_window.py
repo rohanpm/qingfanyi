@@ -14,6 +14,8 @@ class TranslateWindow(Gtk.Window):
     def __init__(self, snapshot):
         Gtk.Window.__init__(self, Gtk.WindowType.POPUP)
 
+        self.set_name('translate_window')
+
         self.snapshot = snapshot
 
         (window_x, window_y, width, height) = snapshot.geometry

@@ -8,6 +8,7 @@ from qingfanyi.dict import Dict
 from qingfanyi.popup_manager import PopupManager
 from qingfanyi.snapshot import Snapshot
 from qingfanyi.translate_window import TranslateWindow
+import qingfanyi.styles
 
 from gi.repository import Gtk
 from gi.repository import GLib
@@ -23,7 +24,6 @@ class Translate(object):
         self.dic.open()
         self.condvar = threading.Condition()
         self.error = None
-
 
     def run_in_other_thread(self):
         self.condvar.acquire()
@@ -53,6 +53,8 @@ class Translate(object):
             return
 
         debug('active: %s' % accessible_window)
+
+        qingfanyi.styles.init()
 
         debug('taking snapshot')
         snapshot = Snapshot(accessible_window, gdk_window, self.dic)
