@@ -1,10 +1,16 @@
 # coding=utf-8
-from gi.repository import Gtk, GLib
+from gi.repository import Gtk, GLib, GObject
 from gi.repository import GdkPixbuf
 
 from qingfanyi import debug
 
+
 class TranslateWindow(Gtk.Window):
+    __gsignals__ = {
+        'lookup-requested': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE,
+                             (GObject.TYPE_PYOBJECT,))
+    }
+
     def __init__(self, snapshot):
         Gtk.Window.__init__(self, Gtk.WindowType.POPUP)
 
@@ -28,11 +34,26 @@ class TranslateWindow(Gtk.Window):
 
         GLib.idle_add(self.process_matches)
 
-
     def on_button_released(self, widget, event):
-        debug('button released: %s' % event)
-        self.destroy()
+        debug('button released: %s' % ((event.button, event.x, event.y),))
+        match = self.lookup_match(event)
+        if match:
+            debug(' clicked on: %s' % match)
+            self.emit('lookup-requested', match)
+        else:
+            self.destroy()
 
+    def lookup_match(self, event):
+        (window_x, window_y, _, _) = self.snapshot.geometry
+        event_x = event.x
+        event_y = event.y
+
+        for m in self.snapshot.matches:
+            (x, y, w, h) = m.rect
+            x -= window_x
+            y -= window_y
+            if x <= event_x < x+w and y <= event_y < y+h:
+                return m
 
     def process_matches(self):
         (window_x, window_y, width, height) = self.snapshot.geometry

@@ -5,6 +5,7 @@ from pyatspi import Registry
 from qingfanyi import debug
 from qingfanyi.atspi import active_window
 from qingfanyi.dict import Dict
+from qingfanyi.popup_manager import PopupManager
 from qingfanyi.snapshot import Snapshot
 from qingfanyi.translate_window import TranslateWindow
 
@@ -59,6 +60,8 @@ class Translate(object):
         debug('creating translate window')
         translate_win = TranslateWindow(snapshot)
         translate_win.show()
+
+        PopupManager(translate_win)
 
         # nested loop to make run() blocking
         translate_win.connect('hide', lambda *_: Gtk.main_quit())

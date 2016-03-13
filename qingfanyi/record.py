@@ -61,8 +61,13 @@ _TONE_DIACRITIC = {
 }
 
 def _pinyin_to_diacritic(w):
-    # last character must be the tone
-    tone = int(w[-1])
+    # last character should be the tone
+    try:
+        tone = int(w[-1])
+    except ValueError:
+        # must be a special case...
+        return w
+
     w = w[0:-1]
 
     w = unicode(w, 'utf-8')
