@@ -1,5 +1,5 @@
 # coding=utf-8
-from gi.repository import Gtk, GLib, GObject
+from gi.repository import Gtk, Gdk, GLib, GObject
 from gi.repository import GdkPixbuf
 
 from qingfanyi import debug
@@ -12,9 +12,15 @@ class TranslateWindow(Gtk.Window):
     }
 
     def __init__(self, snapshot):
-        Gtk.Window.__init__(self, Gtk.WindowType.POPUP)
+        Gtk.Window.__init__(self, Gtk.WindowType.TOPLEVEL)
 
+        self.current_match_index = None
         self.set_name('translate_window')
+        self.set_decorated(False)
+        self.set_skip_pager_hint(True)
+        self.set_skip_taskbar_hint(True)
+        self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
+        self.set_title('qingfanyi')
 
         self.snapshot = snapshot
 
@@ -28,36 +34,82 @@ class TranslateWindow(Gtk.Window):
         self.img.show()
 
         self.connect('button-release-event', self.on_button_released)
+        self.connect('key-press-event', self.on_key_pressed)
+        self.add_events(Gdk.EventMask.KEY_PRESS_MASK)
         self.add(self.img)
         self.set_resizable(False)
         self.set_decorated(False)
         self.move(window_x, window_y)
         self.resize(width, height)
-
         GLib.idle_add(self.process_matches)
 
     def on_button_released(self, widget, event):
         debug('button released: %s' % ((event.button, event.x, event.y),))
-        match = self.lookup_match(event)
+        (match, idx) = self.lookup_match(event)
         if match:
             debug(' clicked on: %s' % match)
+            self.current_match_index = idx
             self.emit('lookup-requested', match)
         else:
             self.destroy()
+
+    def on_key_pressed(self, widget, event):
+        debug('key pressed: %s' % ((event.keyval, event.string),))
+
+        key = event.keyval
+        if key == Gdk.KEY_Left:
+            self.navigate(-1)
+        elif key == Gdk.KEY_Right:
+            self.navigate(1)
+        elif key == Gdk.KEY_Up:
+            self.navigate(-len(self.snapshot.matches) / 10)
+        elif key == Gdk.KEY_Down:
+            self.navigate(len(self.snapshot.matches) / 10)
+        elif event.string:
+            self.destroy()
+
+    def navigate(self, offset):
+        idx = self.current_match_index
+        if idx is None:
+            if offset == 1:
+                idx = 0
+            else:
+                idx = -1
+        else:
+            idx += offset
+
+        size = len(self.snapshot.matches)
+        if idx >= size:
+            idx -= size
+        elif idx < 0:
+            idx += size
+
+        self.current_match_index = idx
+        match = self.snapshot.matches[idx]
+        self.emit('lookup-requested', match)
 
     def lookup_match(self, event):
         (window_x, window_y, _, _) = self.snapshot.geometry
         event_x = event.x
         event_y = event.y
 
+        i = 0
         for m in self.snapshot.matches:
             (x, y, w, h) = m.rect
             x -= window_x
             y -= window_y
             if x <= event_x < x+w and y <= event_y < y+h:
-                return m
+                return m, i
+            i += 1
+
+        return None, None
 
     def process_matches(self):
+        self.set_can_default(True)
+        self.grab_default()
+        self.img.set_can_focus(True)
+        self.img.grab_focus()
+
         (window_x, window_y, width, height) = self.snapshot.geometry
 
         copy_pb = []

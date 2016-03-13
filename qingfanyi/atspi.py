@@ -26,7 +26,7 @@ def active_window(attempts=8):
             debug(' cannot find active window after several attempts')
             return None, None
         debug(' try again to find active window')
-        time.sleep(0.05)
+        time.sleep(0.1)
         return active_window(attempts-1)
 
     gdk_window = Gdk.Screen.get_default().get_active_window()
