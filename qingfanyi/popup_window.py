@@ -1,11 +1,11 @@
 # coding=utf-8
-from gi.repository import Gtk, GLib
+from gi.repository import Gtk, Gdk
 
 from qingfanyi import debug
 
 
 class PopupWindow(Gtk.Window):
-    def __init__(self, match):
+    def __init__(self, parent, match):
         Gtk.Window.__init__(self, Gtk.WindowType.POPUP)
 
         self.set_name('popup_window')
@@ -15,9 +15,6 @@ class PopupWindow(Gtk.Window):
 
         self.set_size_request(80, -1)
 
-        (x, y, w, h) = match.rect
-        self.move(x + w/2, y + h + 4)
-
         layout = Gtk.Box.new(Gtk.Orientation.VERTICAL, 4)
 
         _add_labels(layout, match)
@@ -25,7 +22,53 @@ class PopupWindow(Gtk.Window):
         layout.show()
         self.add(layout)
 
+        # Initially set a position near the match (at least so it's on the right monitor);
+        # init_position is expected to make this better later
+        (x, y, _, _) = match.rect
+        self.move(x, y)
+
         debug('should popup for %s' % match)
+
+        def do_init_position(*_):
+            self.init_position(parent, match)
+
+        self.connect('size-allocate', do_init_position)
+
+    def init_position(self, parent, match):
+        self_w = self.get_allocated_width()
+        self_h = self.get_allocated_height()
+
+        screen = Gdk.Screen.get_default()
+        monitor = screen.get_monitor_at_window(parent.get_window())
+        debug('monitor %d' % monitor)
+        monitor_rect = screen.get_monitor_geometry(monitor)
+        (root_x, root_y, root_w, root_h) = (monitor_rect.x, monitor_rect.y,
+                                            monitor_rect.width, monitor_rect.height)
+        (mx, my, mw, mh) = match.rect
+
+        def adjust_x(val):
+            debug('adjust x %s: root (%s .. %s)' % (val, root_x, root_x + root_w))
+            if self_w >= root_w:
+                return val
+            while val + self_w > root_x + root_w:
+                val -= 1
+            while val < root_x:
+                val += 1
+            debug('adjust to %s' % val)
+            return val
+
+        # First try below.
+        (x, y) = mx + mw/4, my + mh + 3
+        if y + self_h < root_y + root_h:
+            self.move(adjust_x(x), y)
+            return
+
+        # Then above.
+        (x, y) = mx + mw/4, my - self_h - 3
+        self.move(adjust_x(x), y)
+
+
+
 
 def _add_labels(layout, match):
     debug('add labels')
@@ -51,4 +94,3 @@ def _add_labels(layout, match):
             label = Gtk.Label('• %s' % en)
             label.set_name('en_US')
             add(label)
-
