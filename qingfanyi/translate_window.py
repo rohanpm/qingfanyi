@@ -55,29 +55,30 @@ class TranslateWindow(Gtk.Window):
         sub = self.pixbuf.new_subpixbuf(*rect).copy()
         pix = sub.get_pixels()
         alpha = sub.get_has_alpha()
+        istride = sub.get_rowstride()
         bytes_per_pixel = 4 if alpha else 3
-        stride = sub.get_rowstride()
-        bytes_total = stride*h
+        ostride = w*bytes_per_pixel
+        bytes_total = ostride*h
 
         npix = bytearray(bytes_total)
         for i in range(h):
             for j in range(0, w*bytes_per_pixel, bytes_per_pixel):
-                npix[i*stride + j]     = 255 - ord(pix[i*stride + j])
-                npix[i*stride + j + 1] = 255 - ord(pix[i*stride + j + 1])
-                npix[i*stride + j + 2] = 255 - ord(pix[i*stride + j + 2])
+                npix[i*ostride + j]     = 255 - ord(pix[i*istride + j])
+                npix[i*ostride + j + 1] = 255 - ord(pix[i*istride + j + 1])
+                npix[i*ostride + j + 2] = 255 - ord(pix[i*istride + j + 2])
                 if alpha:
-                    npix[i*stride + j + 3] = 255
+                    npix[i*ostride + j + 3] = 255
 
         bytes = GLib.Bytes.new(npix)
         debug('have bytes: %s for rect: %s' % (bytes.get_size(), rect))
         sub = GdkPixbuf.Pixbuf.new_from_bytes(
             bytes,
             GdkPixbuf.Colorspace.RGB,
-            sub.get_has_alpha(),
-            sub.get_bits_per_sample(),
-            sub.get_width(),
-            sub.get_height(),
-            sub.get_rowstride()
+            alpha,
+            8,
+            w,
+            h,
+            ostride
         )
         sub.copy_area(0, 0, w, h, self.pixbuf, x, y)
         self.img.set_from_pixbuf(self.pixbuf)
