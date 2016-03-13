@@ -43,13 +43,66 @@ class TranslateWindow(Gtk.Window):
         self.resize(width, height)
         GLib.idle_add(self.process_matches)
 
+    def relative_rect(self, match):
+        (window_x, window_y, _, _) = self.snapshot.geometry
+        (x, y, w, h) = match.rect
+        x -= window_x
+        y -= window_y
+        return x, y, w, h
+
+    def invert(self, rect):
+        (x, y, w, h) = rect
+        sub = self.pixbuf.new_subpixbuf(*rect).copy()
+        pix = sub.get_pixels()
+        alpha = sub.get_has_alpha()
+        bytes_per_pixel = 4 if alpha else 3
+        stride = sub.get_rowstride()
+        bytes_total = stride*h
+
+        npix = bytearray(bytes_total)
+        for i in range(h):
+            for j in range(0, w*bytes_per_pixel, bytes_per_pixel):
+                npix[i*stride + j]     = 255 - ord(pix[i*stride + j])
+                npix[i*stride + j + 1] = 255 - ord(pix[i*stride + j + 1])
+                npix[i*stride + j + 2] = 255 - ord(pix[i*stride + j + 2])
+                if alpha:
+                    npix[i*stride + j + 3] = 255
+
+        bytes = GLib.Bytes.new(npix)
+        debug('have bytes: %s for rect: %s' % (bytes.get_size(), rect))
+        sub = GdkPixbuf.Pixbuf.new_from_bytes(
+            bytes,
+            GdkPixbuf.Colorspace.RGB,
+            sub.get_has_alpha(),
+            sub.get_bits_per_sample(),
+            sub.get_width(),
+            sub.get_height(),
+            sub.get_rowstride()
+        )
+        sub.copy_area(0, 0, w, h, self.pixbuf, x, y)
+        self.img.set_from_pixbuf(self.pixbuf)
+
+
+    def set_current_match(self, idx, match):
+        if self.current_match_index == idx:
+            return
+
+        if self.current_match_index is not None:
+            prev_match = self.snapshot.matches[self.current_match_index]
+            prev_rect = self.relative_rect(prev_match)
+            self.invert(prev_rect)
+
+        self.current_match_index = idx
+        rect = self.relative_rect(match)
+        self.invert(rect)
+        self.emit('lookup-requested', match)
+
     def on_button_released(self, widget, event):
         debug('button released: %s' % ((event.button, event.x, event.y),))
         (match, idx) = self.lookup_match(event)
         if match:
             debug(' clicked on: %s' % match)
-            self.current_match_index = idx
-            self.emit('lookup-requested', match)
+            self.set_current_match(idx, match)
         else:
             self.destroy()
 
@@ -84,9 +137,7 @@ class TranslateWindow(Gtk.Window):
         elif idx < 0:
             idx += size
 
-        self.current_match_index = idx
-        match = self.snapshot.matches[idx]
-        self.emit('lookup-requested', match)
+        self.set_current_match(idx, self.snapshot.matches[idx])
 
     def lookup_match(self, event):
         (window_x, window_y, _, _) = self.snapshot.geometry
