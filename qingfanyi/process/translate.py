@@ -3,7 +3,7 @@ import time
 from pyatspi import Registry
 
 from qingfanyi import debug
-from qingfanyi.atspi import active_window
+from qingfanyi.wm import active_window
 from qingfanyi.dict import Dict
 from qingfanyi.popup_manager import PopupManager
 from qingfanyi.snapshot import Snapshot
