@@ -54,7 +54,7 @@ def build(in_filename, in_file=None, logger=None):
     if not logger:
         logger = qingfanyi.debug
 
-    logger('Building from %s %s' % in_filename)
+    logger('Building from %s' % in_filename)
 
     logger('Writing dict ...')
     _ensure_index_dir()
