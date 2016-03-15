@@ -27,7 +27,7 @@ class Snapshot(object):
 
     @property
     def matches(self):
-        if not self._matches:
+        if self._matches is None:
             all_matches = _process_chinese(self.accessible_window, self.dic)
             self._matches = [m
                              for m in all_matches
