@@ -16,13 +16,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from multiprocessing import Queue, Process, Pool
 
-from qingfanyi import debug
-
 import signal
 import os
 
+from qingfanyi import debug
+from qingfanyi.index_builder import ensure_index_built
+
 
 def run():
+    ensure_index_built()
+
     activate_queue = Queue(1)
     keybind_process = Process(target=_start_keybind_process, args=(activate_queue,))
     keybind_process.start()

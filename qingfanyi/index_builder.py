@@ -14,10 +14,14 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from __future__ import print_function
 import gzip
 import marisa_trie
-import qingfanyi.dict
 import os
+from pkg_resources import resource_stream
+
+import qingfanyi.dict
+from qingfanyi import debug
 
 
 def _extract_keys(line, lineno):
@@ -99,3 +103,14 @@ def build(in_filename, in_file=None, logger=None):
     logger('Done!')
 
 
+def ensure_index_built():
+    if os.path.exists(qingfanyi.dict.INDEX_FILENAME):
+        debug('Index is already built.')
+        return
+
+    print('Building index on first use.')
+
+    resource_name = 'data/cedict_1_0_ts_utf-8_mdbg.txt'
+    stream = resource_stream('qingfanyi', resource_name)
+    assert stream
+    build(resource_name, stream, logger=print)
