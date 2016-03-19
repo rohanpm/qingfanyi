@@ -22,5 +22,8 @@ setup(
         'console_scripts': [
             'qfy=qingfanyi.process.main:run'
         ]
+    },
+    package_data = {
+        'qingfanyi': ['data/*.txt'],
     }
 )
