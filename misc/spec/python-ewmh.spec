@@ -1,9 +1,12 @@
 %global srcname ewmh
 %global sum python implementation of Extended Window Manager Hints, based on Xlib
+%global _enable_debug_package 0
+%global debug_package %{nil}
+%global __os_install_post /usr/lib/rpm/brp-compress %{nil}
 
 Name:           python-%{srcname}
 Version:        0.1.3
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        %{sum}
 
 License:        LGPLv3+
