@@ -1,0 +1,60 @@
+From c05b1cda288688c2dd07885470a723366211e029 Mon Sep 17 00:00:00 2001
+From: Rohan McGovern <rohan@mcgovern.id.au>
+Date: Sun, 20 Mar 2016 09:46:37 +1000
+Subject: [PATCH 2/2] Fix signature of getRangeExtents
+
+As per getCharacterExtents in fd0d5867348f64, the declared return
+type of this method was incorrect.
+
+See QTBUG-47653.
+---
+ src/atspiadaptor.cpp | 6 +++---
+ src/atspiadaptor.h   | 2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/src/atspiadaptor.cpp b/src/atspiadaptor.cpp
+index 007cbd0..9e46e8a 100644
+--- a/src/atspiadaptor.cpp
++++ b/src/atspiadaptor.cpp
+@@ -2099,14 +2099,14 @@ QList<QVariant> AtSpiAdaptor::getCharacterExtents(QAccessibleInterface *interfac
+     return QList<QVariant>() << rect.x() << rect.y() << rect.width() << rect.height();
+ }
+ 
+-QRect AtSpiAdaptor::getRangeExtents(QAccessibleInterface *interface,
++QList<QVariant> AtSpiAdaptor::getRangeExtents(QAccessibleInterface *interface,
+                                     int startOffset, int endOffset, uint coordType) const
+ {
+     if (endOffset == -1)
+         endOffset = interface->textInterface()->characterCount();
+ 
+     if (endOffset <= startOffset) {
+-        return QRect();
++        return QList<QVariant>() << -1 << -1 << 0 << 0;
+     }
+ 
+     QRect rect = interface->textInterface()->characterRect(startOffset, QAccessible2::RelativeToScreen);
+@@ -2118,7 +2118,7 @@ QRect AtSpiAdaptor::getRangeExtents(QAccessibleInterface *interface,
+     if (coordType == ATSPI_COORD_TYPE_WINDOW)
+         rect = translateRectToWindowCoordinates(interface, rect);
+ 
+-    return rect;
++    return QList<QVariant>() << rect.x() << rect.y() << rect.width() << rect.height();
+ }
+ 
+ QRect AtSpiAdaptor::translateRectToWindowCoordinates(QAccessibleInterface *interface, const QRect &rect)
+diff --git a/src/atspiadaptor.h b/src/atspiadaptor.h
+index d77c003..cedc9f6 100644
+--- a/src/atspiadaptor.h
++++ b/src/atspiadaptor.h
+@@ -105,7 +105,7 @@ private:
+     QVariantList getAttributes(QAccessibleInterface *interface, int offset, bool includeDefaults) const;
+     QVariantList getAttributeValue(QAccessibleInterface *interface, int offset, const QString &attributeName) const;
+     QList<QVariant> getCharacterExtents(QAccessibleInterface *interface, int offset, uint coordType) const;
+-    QRect getRangeExtents(QAccessibleInterface *interface, int startOffset, int endOffset, uint coordType) const;
++    QList<QVariant> getRangeExtents(QAccessibleInterface *interface, int startOffset, int endOffset, uint coordType) const;
+     QAccessible2::BoundaryType qAccessibleBoundaryType(int atspiTextBoundaryType) const;
+ 
+     static bool inheritsQAction(QObject *object);
+-- 
+1.8.3.1
+

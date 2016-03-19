@@ -1,0 +1,27 @@
+From 18988aa2ccd09bc92c7ecf0378af5438d534514d Mon Sep 17 00:00:00 2001
+From: Rohan McGovern <rohan@mcgovern.id.au>
+Date: Sun, 20 Mar 2016 09:43:53 +1000
+Subject: [PATCH 1/2] Fix compile
+
+Commit fd0d5867348f64 updated getCharacterExtents in .cpp but
+forgot the corresponding update in .h.
+---
+ src/atspiadaptor.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/atspiadaptor.h b/src/atspiadaptor.h
+index 814b472..d77c003 100644
+--- a/src/atspiadaptor.h
++++ b/src/atspiadaptor.h
+@@ -104,7 +104,7 @@ private:
+     // text helper functions
+     QVariantList getAttributes(QAccessibleInterface *interface, int offset, bool includeDefaults) const;
+     QVariantList getAttributeValue(QAccessibleInterface *interface, int offset, const QString &attributeName) const;
+-    QRect getCharacterExtents(QAccessibleInterface *interface, int offset, uint coordType) const;
++    QList<QVariant> getCharacterExtents(QAccessibleInterface *interface, int offset, uint coordType) const;
+     QRect getRangeExtents(QAccessibleInterface *interface, int startOffset, int endOffset, uint coordType) const;
+     QAccessible2::BoundaryType qAccessibleBoundaryType(int atspiTextBoundaryType) const;
+ 
+-- 
+1.8.3.1
+
