@@ -25,7 +25,7 @@ This is an incomplete list of methods for enabling accessibility:
 - Qt4 applications
     - Install qt-at-spi. You need at least version 0.4.0, due to the bug
       fixed by
-      [this commit](http://commits.kde.org/qtatspi/fd0d5867348f6450a61294d6f85965e963bf1d48).
+      [this commit](https://github.com/KDE/qtatspi/commit/fd0d5867348f6450a61294d6f85965e963bf1d48).
     - set environment variable `QT_ACCESSIBILITY=1`
 - Qt5 applications
     - set environment variable `QT_LINUX_ACCESSIBILITY_ALWAYS_ON=1`
