@@ -42,10 +42,15 @@ class Snapshot(object):
     def matches(self):
         if self._matches is None:
             all_matches = _process_chinese(self.accessible_window, self.dic)
-            self._matches = [m
-                             for m in all_matches
-                             if _any_rect_within(self.geometry, m.rects)]
-            debug('filtered %d matches to %d' % (len(all_matches), len(self._matches)))
+            filtered_matches = [m
+                                for m in all_matches
+                                if _any_rect_within(self.geometry, m.rects)]
+            debug('filtered %d matches to %d' % (len(all_matches), len(filtered_matches)))
+
+            debug('sorting matches by rect...')
+            sorted_matches = sorted(filtered_matches, key=_match_sort_key)
+            debug('...done sorting')
+            self._matches = sorted_matches
         return self._matches
 
 
@@ -93,8 +98,14 @@ def _any_rect_within(src_rect, rects):
         if _rect_within(src_rect, rect):
             return True
 
+
 def _rect_within(src_rect, rect):
     (src_x, src_y, src_w, src_h) = src_rect
     (x, y, w, h) = rect
 
     return x >= src_x and x+w < src_x+src_w and y >= src_y and y+h < src_y+src_h
+
+
+def _match_sort_key(match):
+    (x, y, w, h) = match.rects[0]
+    return y, x
