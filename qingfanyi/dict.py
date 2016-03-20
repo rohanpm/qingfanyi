@@ -77,6 +77,7 @@ class Dict(object):
             # Read that line.
             end_index = self._dict_mm.find('\n', index)
             line = self._dict_mm[index:end_index]
+            line = unicode(line, 'utf-8')
             out.append(Record.from_line(line))
 
         return out

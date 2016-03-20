@@ -106,6 +106,6 @@ def _add_labels(layout, match):
         label.set_name('main_pinyin')
         add(label)
         for en in record.en_US:
-            label = Gtk.Label('• %s' % en)
+            label = Gtk.Label(u'• %s' % en)
             label.set_name('en_US')
             add(label)

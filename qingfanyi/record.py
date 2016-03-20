@@ -16,6 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import re
 
+from qingfanyi import debug
+
 
 class Record(object):
     _CEDICT_PATTERN = re.compile(
@@ -36,13 +38,18 @@ class Record(object):
     def __init__(self):
         self.zh_CN = None
         self.zh_TW = None
-        self.en_US = None
+        self.en_US_num = None
         self.pinyin_num = None
 
     @property
     def pinyin(self):
         out = [_pinyin_to_diacritic(w) for w in self.pinyin_num.split(' ')]
         return u' '.join(out)
+
+    @property
+    def en_US(self):
+        """Processes numeric tones in the raw en_US texts."""
+        return [_inner_pinyin_to_diacritic(w) for w in self.en_US_num]
 
     def __str__(self):
         return "%s [%s]:\n  %s" % (self.zh_CN,
@@ -63,7 +70,8 @@ class Record(object):
         out.zh_TW = m.group(1)
         out.zh_CN = m.group(2)
         out.pinyin_num = m.group(3)
-        out.en_US = m.group(4).split('/')
+        out.en_US_num = m.group(4).split('/')
+        debug('type of en_US_num: %s' % type(out.en_US_num[0]))
 
         return out
 
@@ -85,8 +93,6 @@ def _pinyin_to_diacritic(w):
 
     w = w[0:-1]
 
-    w = unicode(w, 'utf-8')
-
     w = w.replace('u:', u'ü')
 
     # https://en.wikipedia.org/wiki/Pinyin
@@ -106,3 +112,15 @@ def _pinyin_to_diacritic(w):
 
     return w
 
+
+def _pinyins_to_diacritic(ws):
+    out = u' '.join([_pinyin_to_diacritic(w) for w in ws.split()])
+    debug('pinyins to diacritic %s returning %s' % (ws, out))
+    return out
+
+
+def _inner_pinyin_to_diacritic(text):
+    # input example: u'CL:個|个[ge4],項|项[xiang4]'
+    return re.sub(r'\[(([a-zA-Z]+\d ?)+)\]',
+                  lambda m: u'[%s]' % _pinyins_to_diacritic(m.group(1)),
+                  text)
