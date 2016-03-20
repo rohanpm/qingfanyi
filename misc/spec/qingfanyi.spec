@@ -11,7 +11,7 @@ Summary:        %{sum}
 
 License:        GPLv3+
 URL:            https://github.com/rohanpm/%{srcname}
-Source0:        http://example.com/%{srcname}-%{version}.tar.gz
+Source0:        https://github.com/rohanpm/%{srcname}/archive/v%{version}.tar.gz
 
 BuildRequires:  python2-devel
 BuildRequires:  python-setuptools
