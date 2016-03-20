@@ -4,10 +4,30 @@ qingfanyi
 *qingfanyi* or *qfy* is an interactive Chinese to English translation
 tool for Linux desktop systems.
 
+Installation
+============
+
+Fedora and CentOS users may install qingfanyi RPMs from
+[this copr project](https://copr.fedorainfracloud.org/coprs/rohanpm/qingfanyi/).
+
 Usage
 =====
 
-(To be written...)
+1. Enable accessibility support for your desktop environment, or the
+   program(s) where you'll want to use qingfanyi.
+   (See *Enabling Accessibility* below for additional details.)
+2. Run `qfy`.
+3. When the active window contains some traditional or simplified
+   Chinese text, press the global shortcut (default: `<Ctrl><Alt>z`).
+4. A window will pop up highlighting all translatable Chinese text in
+   the active window. Click on a Chinese word or phrase to look up the
+   English definition, or use the keyboard to navigate between
+   words/phrases:
+    - Left/Right: move backwards/forwards one word or phrase
+    - Up/Down: jump many words backwards/forwards
+    - Enter: close window
+
+(Screenshots to be added...)
 
 Enabling Accessibility
 ======================
@@ -23,9 +43,10 @@ This is an incomplete list of methods for enabling accessibility:
 - Firefox
     - set environment variable `GNOME_ACCESSIBILITY=1`
 - Qt4 applications
-    - Install qt-at-spi. You need at least version 0.4.0, due to the bug
-      fixed by
-      [this commit](https://github.com/KDE/qtatspi/commit/fd0d5867348f6450a61294d6f85965e963bf1d48).
+    - Install qt-at-spi. Currently you will need a pre-release version
+      (greater than 0.4.0) because all released versions contain bugs.
+      Fedora or CentOS users may use the version from
+      [copr](https://copr.fedorainfracloud.org/coprs/rohanpm/qingfanyi/).
     - set environment variable `QT_ACCESSIBILITY=1`
 - Qt5 applications
     - set environment variable `QT_LINUX_ACCESSIBILITY_ALWAYS_ON=1`
