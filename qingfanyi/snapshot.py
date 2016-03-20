@@ -44,7 +44,7 @@ class Snapshot(object):
             all_matches = _process_chinese(self.accessible_window, self.dic)
             self._matches = [m
                              for m in all_matches
-                             if _rect_within(self.geometry, m.rect)]
+                             if _any_rect_within(self.geometry, m.rects)]
             debug('filtered %d matches to %d' % (len(all_matches), len(self._matches)))
         return self._matches
 
@@ -80,13 +80,18 @@ def _process_chinese(window, dic):
     debug('BEGIN parsing texts')
     for (text, text_object, accessible_object) in targets:
         matched = dic.parse_text(text)
-        [m.init_rect(text_object) for m in matched]
+        [m.init_rects(text_object) for m in matched]
         out.extend(matched)
         debug("found text: %s\n%s" % (text, matched))
     debug('END parsing texts')
 
     return out
 
+
+def _any_rect_within(src_rect, rects):
+    for rect in rects:
+        if _rect_within(src_rect, rect):
+            return True
 
 def _rect_within(src_rect, rect):
     (src_x, src_y, src_w, src_h) = src_rect

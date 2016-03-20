@@ -39,7 +39,7 @@ class PopupWindow(Gtk.Window):
 
         # Initially set a position near the match (at least so it's on the right monitor);
         # init_position is expected to make this better later
-        (x, y, _, _) = match.rect
+        (x, y, _, _) = match.rects[0]
         self.move(x, y)
 
         debug('should popup for %s' % match)
@@ -59,7 +59,7 @@ class PopupWindow(Gtk.Window):
         monitor_rect = screen.get_monitor_geometry(monitor)
         (root_x, root_y, root_w, root_h) = (monitor_rect.x, monitor_rect.y,
                                             monitor_rect.width, monitor_rect.height)
-        (mx, my, mw, mh) = match.rect
+        (mx, my, mw, mh) = match.rects[0]
 
         def adjust_x(val):
             debug('adjust x %s: root (%s .. %s)' % (val, root_x, root_x + root_w))

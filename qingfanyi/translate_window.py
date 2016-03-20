@@ -58,9 +58,9 @@ class TranslateWindow(Gtk.Window):
         self.resize(width, height)
         GLib.idle_add(self.process_matches)
 
-    def relative_rect(self, match):
+    def relative_rect(self, rect):
         (window_x, window_y, _, _) = self.snapshot.geometry
-        (x, y, w, h) = match.rect
+        (x, y, w, h) = rect
         x -= window_x
         y -= window_y
         return x, y, w, h
@@ -105,12 +105,16 @@ class TranslateWindow(Gtk.Window):
 
         if self.current_match_index is not None:
             prev_match = self.snapshot.matches[self.current_match_index]
-            prev_rect = self.relative_rect(prev_match)
-            self.invert(prev_rect)
+            for rect in prev_match.rects:
+                prev_rect = self.relative_rect(rect)
+                self.invert(prev_rect)
 
         self.current_match_index = idx
-        rect = self.relative_rect(match)
-        self.invert(rect)
+
+        for rect in match.rects:
+            rect = self.relative_rect(rect)
+            self.invert(rect)
+
         self.emit('lookup-requested', match)
 
     def on_button_released(self, widget, event):
@@ -162,11 +166,11 @@ class TranslateWindow(Gtk.Window):
 
         i = 0
         for m in self.snapshot.matches:
-            (x, y, w, h) = m.rect
-            x -= window_x
-            y -= window_y
-            if x <= event_x < x+w and y <= event_y < y+h:
-                return m, i
+            for (x, y, w, h) in m.rects:
+                x -= window_x
+                y -= window_y
+                if x <= event_x < x+w and y <= event_y < y+h:
+                    return m, i
             i += 1
 
         return None, None
@@ -181,14 +185,14 @@ class TranslateWindow(Gtk.Window):
 
         copy_pb = []
         for m in self.snapshot.matches:
-            (x, y, w, h) = m.rect
-            x -= window_x
-            y -= window_y
-            rect = (x, y, w, h)
-            sub = self.snapshot.pixbuf.new_subpixbuf(*rect)
-            if sub:
-                sub = sub.copy()
-                copy_pb.append((sub, rect))
+            for (x, y, w, h) in m.rects:
+                x -= window_x
+                y -= window_y
+                rect = (x, y, w, h)
+                sub = self.snapshot.pixbuf.new_subpixbuf(*rect)
+                if sub:
+                    sub = sub.copy()
+                    copy_pb.append((sub, rect))
 
         for (pb, rect) in copy_pb:
             (x, y, w, h) = rect
