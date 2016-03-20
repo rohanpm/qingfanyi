@@ -83,15 +83,15 @@ _TONE_DIACRITIC = {
     5: '',         # neutral tone - nothing
 }
 
-def _pinyin_to_diacritic(w):
+def _pinyin_to_diacritic(word):
     # last character should be the tone
     try:
-        tone = int(w[-1])
+        tone = int(word[-1])
     except ValueError:
         # must be a special case...
-        return w
+        return word
 
-    w = w[0:-1]
+    w = word[0:-1]
 
     w = w.replace('u:', u'ü')
 
@@ -101,8 +101,12 @@ def _pinyin_to_diacritic(w):
     # where the tone mark is placed on the u instead"
     chars = [u'iu']
     chars.extend([c for c in u'aoeiuü'])
-    indexes = [(c, w.find(c)) for c in chars]
+    indexes = [(c, w.lower().find(c)) for c in chars]
     indexes = [(c, i) for (c, i) in indexes if i != -1]
+    if not indexes:
+        # Weird, a word without vowels?
+        debug('vowel-less word? %s' % word)
+        return word
     (c, index) = min(indexes, key=lambda (c, i): i)
 
     dia = _TONE_DIACRITIC[tone]
