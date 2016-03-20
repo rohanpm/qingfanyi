@@ -27,7 +27,7 @@ Usage
     - Up/Down: jump many words backwards/forwards
     - Enter: close window
 
-(Screenshots to be added...)
+![qingfanyi with Firefox demo](misc/doc/ff-demo.gif?raw=true)
 
 Enabling Accessibility
 ======================
