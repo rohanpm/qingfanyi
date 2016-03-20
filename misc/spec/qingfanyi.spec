@@ -5,7 +5,7 @@
 %global __os_install_post /usr/lib/rpm/brp-compress %{nil}
 
 Name:           qingfanyi
-Version:        1.0.0
+Version:        1.1.0
 Release:        1%{?dist}
 Summary:        %{sum}
 
@@ -43,3 +43,5 @@ provide Chinese translations in a popup.
 /usr/bin/qfy
 
 %changelog
+* Sun Mar 20 2016 Rohan McGovern <rohan@mcgovern.id.au> - 1.1.0-1
+- Version 1.1.0
