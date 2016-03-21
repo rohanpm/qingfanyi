@@ -19,6 +19,7 @@ import time
 import Xlib.display
 import ewmh
 import pyatspi
+from Xlib import X
 from gi.repository import Gdk, GLib, GdkX11
 
 from qingfanyi import debug
@@ -74,6 +75,16 @@ def _guess_active_window():
         debug('no active window from ewmh')
         return None, None
 
+    window_names = []
+    window_names.append(wm.getWmName(active_win))
+
+    wm_name = active_win.get_full_property(display.get_atom('WM_NAME'), X.AnyPropertyType)
+    debug('WM_NAME original %s' % wm_name.value)
+    wm_name = _from_compound_text(wm_name.value)
+    debug('WM_NAME decoded %s' % wm_name)
+    if wm_name not in window_names:
+        window_names.append(wm_name)
+
     gdk_display = Gdk.Display.get_default()
     gdk_window = GdkX11.X11Window.foreign_new_for_display(gdk_display, active_win.id)
 
@@ -82,24 +93,25 @@ def _guess_active_window():
                       gdk_frame_rect.width, gdk_frame_rect.height)
     gdk_geom_rect = gdk_window.get_geometry()
 
-    window_name = wm.getWmName(active_win)
-    debug('active window %s' % window_name)
+    debug('active window %s' % (window_names,))
     debug('active window id %s' % active_win.id)
 
     match = []
     for win in _atspi_windows():
         atspi_name = str(win)
-        debug('win with name %s' % atspi_name)
-        if _geometry_match(win, gdk_frame_rect, gdk_geom_rect) \
-                and atspi_name.endswith('| ' + window_name + ']'):
+        matched_names = [name
+                         for name in window_names
+                         if atspi_name.endswith('| %s]' % name)]
+        debug('win with name %s, matched %s' % (atspi_name, matched_names))
+        if matched_names and _geometry_match(win, gdk_frame_rect, gdk_geom_rect):
             match.append(win)
 
     if not match:
-        debug('no atspi window matching "%s"' % window_name)
+        debug('no atspi window matching "%s"' % window_names)
         return None, None
 
     if len(match) > 1:
-        debug('too many atspi windows matching "%s"' % window_name)
+        debug('too many atspi windows matching "%s"' % window_names)
         return None, None
 
     return match[0], gdk_window
@@ -171,3 +183,34 @@ def _geometry_match(accessible_window, frame, geom):
     if (w0, h0) == (wg, hg) and abs(fx - x0) < 10 and abs(fy - y0) < 10:
         debug(' MATCH fuzzily')
         return True
+
+
+def _from_compound_text(text):
+    # FIXME: not a real COMPOUND_TEXT parser.
+    #
+    # Here is an example string taken from Konversation WM_NAME:
+    #
+    # Freenode \x1b%G\xe2\x80\x93\x1b%@ Konversation
+    #
+    # In the terms used by compound text spec, those special sequences are:
+    #
+    # \x1b%G - 01/11 02/05 04/07
+    # \x1b%@ - 01/11 02/05 04/00
+    #
+    # An image(!) embedded on this doc confirms that these sequences start/stop UTF-8
+    # mode:
+    #
+    # ftp://ftp.riken.jp/X11/XFree86/4.4.0/doc/HTML/ctext.html#7.%20The%20UTF-8%20encoding
+    #
+    # I don't know why this can't be found in any more official doc...
+    #
+    # Anyway, this method should really delegate to XmbTextListToTextProperty, but that
+    # means adding some C into this module since no library we currently use has
+    # appropriate bindings for it.
+    #
+    # So for now, I'll just assume that, on modern systems, in practice this UTF-8
+    # start/stop is the only sequence that matters. Just strip it and the caller can
+    # interpret the name as utf-8.
+    text = text.replace('\x1b%G', '')
+    text = text.replace('\x1b%@', '')
+    return text
