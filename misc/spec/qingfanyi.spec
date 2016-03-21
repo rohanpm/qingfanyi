@@ -5,7 +5,7 @@
 %global __os_install_post /usr/lib/rpm/brp-compress %{nil}
 
 Name:           qingfanyi
-Version:        1.1.0
+Version:        1.1.1
 Release:        1%{?dist}
 Summary:        %{sum}
 
