@@ -83,7 +83,8 @@ class Translate(object):
         Gtk.main()
 
     def run_event_loop(self):
-        Registry.start(gil=True)
+        debug('starting at-spi loop')
+        Registry.start(gil=False)
 
     def __del__(self):
         debug('closing.')
