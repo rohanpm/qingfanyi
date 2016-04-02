@@ -19,8 +19,10 @@ from pyatspi.state import STATE_SHOWING
 
 from qingfanyi import debug
 
+
 def _is_showing(accessible_object):
     return accessible_object.getState().contains(STATE_SHOWING)
+
 
 def get_text_object(accessible_object):
     """
@@ -42,9 +44,9 @@ def visit_visible(root, callback, level=0):
                      and the distance from root (e.g. 0 == root, 1 == child of root,
                      2 == grandchild ...)
     """
-    debug('%s%s' % ('  '*level, root))
+    debug('%s%s' % ('  ' * level, root))
     if not _is_showing(root):
-        debug('%s PRUNE' % ('  '*level))
+        debug('%s PRUNE' % ('  ' * level))
         return
 
     callback(root, level)
