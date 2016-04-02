@@ -18,6 +18,7 @@ from gi.repository import Gdk
 
 from qingfanyi import debug
 from qingfanyi.atspi import get_text_object, visit_visible
+from qingfanyi.geom import any_rect_within
 from qingfanyi.text import may_contain_chinese
 
 
@@ -43,7 +44,7 @@ class Snapshot(object):
             all_matches = _process_chinese(self.accessible_window, self.dic)
             filtered_matches = [m
                                 for m in all_matches
-                                if _any_rect_within(self.geometry, m.rects)]
+                                if any_rect_within(self.geometry, m.rects)]
             debug('filtered %d matches to %d' % (len(all_matches), len(filtered_matches)))
 
             debug('sorting matches by rect...')
@@ -90,19 +91,6 @@ def _process_chinese(window, dic):
     debug('END parsing texts')
 
     return out
-
-
-def _any_rect_within(src_rect, rects):
-    for rect in rects:
-        if _rect_within(src_rect, rect):
-            return True
-
-
-def _rect_within(src_rect, rect):
-    (src_x, src_y, src_w, src_h) = src_rect
-    (x, y, w, h) = rect
-
-    return x >= src_x and x+w < src_x+src_w and y >= src_y and y+h < src_y+src_h
 
 
 def _match_sort_key(match):

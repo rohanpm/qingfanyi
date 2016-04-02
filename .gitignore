@@ -3,3 +3,5 @@
 misc/spec/build/
 misc/spec/src/
 htmlcov/
+tests/test.dict
+tests/test.index

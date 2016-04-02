@@ -30,19 +30,21 @@ DICT_FILENAME = os.path.join(_DATA_DIR, 'qingfanyi.dict')
 
 
 class Dict(object):
-    def __init__(self):
+    def __init__(self, index_filename=INDEX_FILENAME, dict_filename=DICT_FILENAME):
         self._trie = None
         self._dict_file = None
         self._dict_mm = None
         self._opened = False
+        self._index_filename = index_filename
+        self._dict_filename = dict_filename
 
     def open(self):
         if self._opened:
             raise RuntimeError('Tried to open an open Dict!')
 
         self._trie = marisa_trie.RecordTrie('<L')
-        self._trie.mmap(INDEX_FILENAME)
-        self._dict_file = open(DICT_FILENAME)
+        self._trie.mmap(self._index_filename)
+        self._dict_file = open(self._dict_filename)
         self._dict_mm = mmap.mmap(self._dict_file.fileno(), 0, access=mmap.ACCESS_READ)
         self._opened = True
 

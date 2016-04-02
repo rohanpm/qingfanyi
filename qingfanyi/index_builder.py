@@ -15,8 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import print_function
-import gzip
+
 import marisa_trie
+
 import os
 from pkg_resources import resource_stream
 
@@ -41,34 +42,17 @@ def _ensure_index_dir():
             raise
 
 
-def _open_for_read(filename):
-    """
-    Tries to open a file which may or may not be gzip-compressed.
-    """
-    try:
-        out = gzip.open(filename)
-        # open does not try to read any data yet, so to force failure now,
-        # try to seek a bit.
-        out.seek(1)
-        out.seek(0)
-        return out
-    except IOError:
-        # maybe it wasn't gzip...
-        return open(filename)
-
-
-def build(in_filename, in_file=None, logger=None):
+def build(in_filename, in_file, logger=None,
+          out_index_filename=qingfanyi.dict.INDEX_FILENAME,
+          out_dict_filename=qingfanyi.dict.DICT_FILENAME):
     """
     Takes a dictionary file in CEDICT format and generates an index for use with
     qingfanyi.
 
     :param in_filename: Name of input CEDICT file
-    :param in_file: IO object for dictionary file, if already opened.
+    :param in_file: IO object for dictionary file
     :param logger: Function accepting a string, used for logging.
     """
-    if not in_file:
-        with _open_for_read(in_filename) as f:
-            return build(in_filename, in_file=f, logger=logger)
 
     if not logger:
         logger = qingfanyi.debug
@@ -77,7 +61,7 @@ def build(in_filename, in_file=None, logger=None):
 
     logger('Writing dict ...')
     _ensure_index_dir()
-    with open(qingfanyi.dict.DICT_FILENAME, 'wb') as dict_out:
+    with open(out_dict_filename, 'wb') as dict_out:
         index = 0
         trie_keys = []
         trie_values = []
@@ -98,13 +82,14 @@ def build(in_filename, in_file=None, logger=None):
 
     logger('Writing index ...')
     marisa_trie.RecordTrie('<L', zip(trie_keys, trie_values)).save(
-        qingfanyi.dict.INDEX_FILENAME)
+        out_index_filename)
 
     logger('Done!')
 
 
-def ensure_index_built():
-    if os.path.exists(qingfanyi.dict.INDEX_FILENAME):
+def ensure_index_built(index_filename=qingfanyi.dict.INDEX_FILENAME,
+                       dict_filename=qingfanyi.dict.DICT_FILENAME):
+    if os.path.exists(index_filename):
         debug('Index is already built.')
         return
 
@@ -113,4 +98,6 @@ def ensure_index_built():
     resource_name = 'data/cedict_1_0_ts_utf-8_mdbg.txt'
     stream = resource_stream('qingfanyi', resource_name)
     assert stream
-    build(resource_name, stream, logger=print)
+    build(resource_name, stream, logger=print,
+          out_dict_filename=dict_filename,
+          out_index_filename=index_filename)

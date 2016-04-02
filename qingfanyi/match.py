@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from qingfanyi import debug
+from qingfanyi.geom import rect_extend
 
 
 class Match(object):
@@ -51,7 +52,7 @@ class Match(object):
                 if curr_y == this_y and curr_h == this_h:
                     # Yes. Keep extending current rect.
                     debug('  extending')
-                    current_rect = _rect_extend(current_rect, this_rect)
+                    current_rect = rect_extend(current_rect, this_rect)
                 else:
                     # No. Save current rect and start a new one.
                     debug('  new rect')
@@ -70,12 +71,3 @@ class Match(object):
         return 'Match%s' % self.__dict__.__repr__()
 
 
-def _rect_extend(rect1, rect2):
-    (x1, y1, w1, h1) = rect1
-    (x2, y2, w2, h2) = rect2
-
-    x = min(x1, x2)
-    y = min(y1, y2)
-    w = max(x1+w1, x2+w2) - x
-    h = max(y1+h1, y2+h2) - y
-    return x, y, w, h
