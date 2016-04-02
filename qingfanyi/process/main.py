@@ -34,15 +34,18 @@ def run():
                           maxtasksperchild=1)
 
     stop = []
-    def stop_now(*_):
-        stop.append(None)
+
+    def stop_now(sig, *_):
+        stop.append(sig)
         activate_queue.close()
-        debug('stop due to signal')
+        debug('stop due to signal %s' % sig)
         signal.signal(signal.SIGTERM, signal.SIG_DFL)
         signal.signal(signal.SIGINT, signal.SIG_DFL)
+        signal.signal(signal.SIGUSR1, signal.SIG_DFL)
 
     signal.signal(signal.SIGTERM, stop_now)
     signal.signal(signal.SIGINT, stop_now)
+    signal.signal(signal.SIGUSR1, stop_now)
 
     while not stop:
         got = None
@@ -62,6 +65,11 @@ def run():
         except StandardError as e:
             debug('failed: %s' % e)
 
+    if stop[0] == signal.SIGUSR1:
+        # keybind child signaled an error
+        keybind_process.join(10)
+        os._exit(7)
+
     debug('exiting normally')
     keybind_process.terminate()
 
@@ -75,7 +83,11 @@ def run():
 def _start_keybind_process(queue):
     debug('keybind process starting')
     import qingfanyi.process.keybind
-    qingfanyi.process.keybind.run(queue)
+    try:
+        qingfanyi.process.keybind.run(queue)
+    except:
+        os.kill(os.getppid(), signal.SIGUSR1)
+        raise
 
 
 def _init_translate_process(*args):
