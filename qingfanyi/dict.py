@@ -14,10 +14,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from contextlib import contextmanager
 import marisa_trie
-
 import mmap
+
 import os.path
 
 from qingfanyi.match import Match
@@ -28,15 +27,6 @@ _DATA_DIR = os.path.expanduser('~/.qingfanyi')
 
 INDEX_FILENAME = os.path.join(_DATA_DIR, 'qingfanyi.index')
 DICT_FILENAME = os.path.join(_DATA_DIR, 'qingfanyi.dict')
-
-@contextmanager
-def open_dict():
-    out = Dict()
-    out.open()
-    try:
-        yield out
-    finally:
-        out.close()
 
 
 class Dict(object):
