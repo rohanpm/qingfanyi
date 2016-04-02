@@ -14,22 +14,20 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import time
+import threading
+import traceback
+
+from gi.repository import GLib
+from gi.repository import Gtk
 from pyatspi import Registry
 
+import qingfanyi.styles
 from qingfanyi import debug
-from qingfanyi.wm import active_window
 from qingfanyi.dict import Dict
 from qingfanyi.popup_manager import PopupManager
 from qingfanyi.snapshot import Snapshot
 from qingfanyi.translate_window import TranslateWindow
-import qingfanyi.styles
-
-from gi.repository import Gtk
-from gi.repository import GLib
-
-import threading
-import traceback
+from qingfanyi.wm import active_window
 
 
 class Translate(object):
