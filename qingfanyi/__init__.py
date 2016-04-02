@@ -32,7 +32,7 @@ def debug(msg):
         if hasattr(msg, '__call__'):
             msg = msg()
         sys.stdout.flush()
-        s = 'debug: %s: %s\n' % (datetime.datetime.now(), msg)
+        s = 'debug: [%s] %s: %s\n' % (os.getpid(), datetime.datetime.now(), msg)
         if isinstance(s, unicode):
             s = s.encode('utf-8', errors='replace')
         sys.stderr.write(s)

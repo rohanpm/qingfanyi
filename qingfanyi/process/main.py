@@ -93,12 +93,12 @@ def _start_keybind_process(queue):
 def _init_translate_process(*args):
     signal.signal(signal.SIGTERM, signal.SIG_DFL)
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-    debug('would init translate process %s' % (args,))
+    debug('init translate process %s' % (args,))
     import qingfanyi.process.translate
     qingfanyi.process.translate.init()
 
 
 def _run_translate_process(*args):
-    debug('would run translate process %s' % (args,))
+    debug('run translate process %s' % (args,))
     import qingfanyi.process.translate
     qingfanyi.process.translate.run()
