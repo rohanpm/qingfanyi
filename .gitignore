@@ -1,5 +1,5 @@
 .idea/
 *.pyc
-zhedod.dict
-zhedod.index
-
+misc/spec/build/
+misc/spec/src/
+htmlcov/
