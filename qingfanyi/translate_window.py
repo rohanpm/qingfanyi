@@ -68,7 +68,7 @@ class TranslateWindow(Gtk.Window):
                 debug('rejecting match outside of window: %s' % match)
                 return
 
-        debug('adding match %s %s' % (match, sender))
+        debug('BEGIN add match %s' % match)
 
         # Retain the current match if there is one.
         current = self.current_match
@@ -82,7 +82,9 @@ class TranslateWindow(Gtk.Window):
                     self.current_match_index = i
                     break
 
-        self.redo_pixbuf()
+        self.update_pixbuf_for_match(match)
+
+        debug('END add match')
 
     def relative_rect(self, rect):
         (window_x, window_y, _, _) = self.snapshot.geometry
@@ -218,13 +220,21 @@ class TranslateWindow(Gtk.Window):
         self.img.set_can_focus(True)
         self.img.grab_focus()
 
-    def redo_pixbuf(self):
+    def update_pixbuf_for_match(self, match):
         debug('BEGIN redraw...')
 
         (window_x, window_y, width, height) = self.snapshot.geometry
 
         copy_pb = []
-        for m in self.matches:
+        matches = [match]
+
+        current_match = self.current_match
+        # Note: could improve to only process current_match if it overlaps.
+        # But time savings are probably negligible.
+        if current_match:
+            matches.append(current_match)
+
+        for m in matches:
             for (x, y, w, h) in m.rects:
                 x -= window_x
                 y -= window_y
@@ -238,9 +248,8 @@ class TranslateWindow(Gtk.Window):
             (x, y, w, h) = rect
             pb.copy_area(0, 0, w, h, self.pixbuf, x, y)
 
-        match = self.current_match
-        if match:
-            self.invert_for_match(match)
+        if current_match:
+            self.invert_for_match(current_match)
 
         self.img.set_from_pixbuf(self.pixbuf)
 
