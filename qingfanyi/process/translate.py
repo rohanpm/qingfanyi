@@ -78,7 +78,7 @@ class Translate(object):
         translate_win.show()
 
         snapshot_matcher = SnapshotMatcher(snapshot, self.dic)
-        snapshot_matcher.connect('match-found', translate_win.add_match)
+        snapshot_matcher.connect('matches-found', translate_win.add_matches)
         snapshot_matcher.start()
 
         PopupManager(translate_win)

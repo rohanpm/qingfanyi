@@ -21,12 +21,14 @@ from qingfanyi.geom import join_rects
 from qingfanyi.match import Match
 from qingfanyi.text import may_contain_chinese
 
+BATCH_SIZE = 20
+
 
 class SnapshotMatcher(GObject.Object):
     """This class asynchronously extracts ``Match`` objects from a ``Snapshot``."""
     __gsignals__ = {
-        'match-found': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE,
-                        (GObject.TYPE_PYOBJECT,))
+        'matches-found': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE,
+                          (GObject.TYPE_PYOBJECT,))
     }
 
     def __init__(self, snapshot, dic):
@@ -45,22 +47,30 @@ class SnapshotMatcher(GObject.Object):
         GLib.idle_add(self._match_next)
 
     def _match_next(self):
-        try:
-            if self._cursor is None:
-                self._cursor = Cursor(*self._texts.next())
-            self._cursor = self._cursor_next(self._cursor)
-            return True
-        except StopIteration:
-            debug('no more text to match')
-            return False
+        matches = []
+        out = True
 
-    def _cursor_next(self, cursor):
+        for i in range(BATCH_SIZE):
+            try:
+                if self._cursor is None:
+                    self._cursor = Cursor(*self._texts.next())
+                self._cursor = self._cursor_next(self._cursor, matches)
+            except StopIteration:
+                debug('no more text to match')
+                out = False
+                break
+
+        self.emit('matches-found', matches)
+
+        return out
+
+    def _cursor_next(self, cursor, matches):
         cursor.step()
         text = cursor.current_text
         debug('cursor idx %d, match text: %s' % (cursor.index,
                                                  text))
         if cursor.finished:
-            return None
+            return
 
         prefixes = self._dic.prefixes(text)
         for pref in prefixes:
@@ -68,8 +78,7 @@ class SnapshotMatcher(GObject.Object):
             records = self._dic[pref]
             rects = cursor.current_rects(len(pref))
             rects = join_rects(rects)
-            match = Match(pref, records, rects)
-            self.emit('match-found', match)
+            matches.append(Match(pref, records, rects))
 
         return cursor
 
