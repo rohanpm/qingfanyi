@@ -39,6 +39,7 @@ class SnapshotMatcher(GObject.Object):
         self._snapshot = snapshot
         self._texts = reversed(snapshot.texts)
         self._cursor = None
+        self._stop = False
 
     def start(self):
         """Start extracting matches.
@@ -47,8 +48,15 @@ class SnapshotMatcher(GObject.Object):
         asynchronously as Chinese text is parsed from the snapshot.
         """
         GLib.idle_add(self._match_next)
+        self._stop = False
+
+    def stop(self):
+        self._stop = True
 
     def _match_next(self):
+        if self._stop:
+            return False
+
         matches = []
         out = True
 

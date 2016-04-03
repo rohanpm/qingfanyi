@@ -73,12 +73,12 @@ class Translate(object):
         debug('taking snapshot')
         snapshot = Snapshot(accessible_window, gdk_window)
 
+        snapshot_matcher = SnapshotMatcher(snapshot, self.dic)
+
         debug('creating translate window')
-        translate_win = TranslateWindow(snapshot)
+        translate_win = TranslateWindow(snapshot, snapshot_matcher)
         translate_win.show()
 
-        snapshot_matcher = SnapshotMatcher(snapshot, self.dic)
-        snapshot_matcher.connect('matches-found', translate_win.add_matches)
         snapshot_matcher.start()
 
         PopupManager(translate_win)

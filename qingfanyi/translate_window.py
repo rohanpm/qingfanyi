@@ -27,7 +27,7 @@ class TranslateWindow(Gtk.Window):
                              (GObject.TYPE_PYOBJECT,))
     }
 
-    def __init__(self, snapshot):
+    def __init__(self, snapshot, snapshot_matcher):
         Gtk.Window.__init__(self, Gtk.WindowType.TOPLEVEL)
 
         self.current_match_index = None
@@ -38,7 +38,6 @@ class TranslateWindow(Gtk.Window):
         self.set_skip_taskbar_hint(True)
         self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
         self.set_title('qingfanyi')
-
         self.snapshot = snapshot
 
         (window_x, window_y, width, height) = snapshot.geometry
@@ -61,6 +60,9 @@ class TranslateWindow(Gtk.Window):
         # TODO: test if this is needed!
         GLib.idle_add(self.focus_in)
 
+        self.unmatch_count = 0
+        snapshot_matcher.connect('matches-found', self.add_matches)
+
     def add_matches(self, sender, matches):
 
         def accept_match(match):
@@ -74,7 +76,16 @@ class TranslateWindow(Gtk.Window):
         matches = filter(accept_match, matches)
 
         if not matches:
+            self.unmatch_count += 1
+            # If we previously have found something, and now we repeatedly cannot match
+            # anything, then tell the sender to stop - probably it's wasting time
+            # processing text far off the screen
+            if self.matches and self.unmatch_count > 5:
+                debug('sender keeps sending offscreen stuff. asking it to stop.')
+                sender.stop()
             return
+
+        self.unmatch_count = 0
 
         debug('BEGIN add %d matches' % len(matches))
 
