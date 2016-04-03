@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='qingfanyi',
-    version='1.1.1',
+    version='1.2.0',
     packages=find_packages(),
     url='https://github.com/rohanpm/qingfanyi',
     license='GPL',
