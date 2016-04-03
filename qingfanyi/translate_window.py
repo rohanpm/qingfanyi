@@ -77,7 +77,10 @@ class TranslateWindow(Gtk.Window):
         self.matches.sort(key=_match_sort_key)
 
         if current:
-            for i in xrange(len(self.matches)):
+            # Update current_match_index to new correct value.
+            # There's only two possibilities: it's still valid, or it got pushed up
+            # by 1
+            for i in (self.current_match_index, self.current_match_index+1):
                 if self.matches[i] is current:
                     self.current_match_index = i
                     break
