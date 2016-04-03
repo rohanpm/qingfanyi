@@ -19,9 +19,7 @@ import mmap
 
 import os.path
 
-from qingfanyi.match import Match
 from qingfanyi.record import Record
-from qingfanyi.text import may_contain_chinese
 
 _DATA_DIR = os.path.expanduser('~/.qingfanyi')
 
@@ -73,37 +71,3 @@ class Dict(object):
             out.append(Record.from_line(line))
 
         return out
-
-    def parse_text(self, text):
-        """
-        Parses a string and returns all records looked up from the dictionary.
-        The returned value is a list of Match objects.
-        """
-        out = []
-        offset = 0
-        while text:
-            advance = 1
-
-            # Explicitly skip non-CJK texts.
-            #
-            # The reason is that there are some entries in the dictionary for short
-            # slang terms written using common English letters or symbols, e.g. "A".
-            # Since this program is expected to work with mixed English and Chinese text,
-            # these would most likely be false positives.
-            if may_contain_chinese(text[0]):
-                prefs = self.prefixes(text)
-
-                # Get the longest match
-                prefs = sorted(prefs, key=len, reverse=True)
-
-                if prefs:
-                    pref = prefs[0]
-                    records = self[pref]
-                    out.append(Match(offset, pref, records))
-                    advance = len(pref)
-
-            offset += advance
-            text = text[advance:]
-
-        return out
-

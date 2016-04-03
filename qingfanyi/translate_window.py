@@ -18,6 +18,7 @@ from gi.repository import Gtk, Gdk, GLib, GObject
 from gi.repository import GdkPixbuf
 
 from qingfanyi import debug
+from qingfanyi.geom import rect_within
 
 
 class TranslateWindow(Gtk.Window):
@@ -30,6 +31,7 @@ class TranslateWindow(Gtk.Window):
         Gtk.Window.__init__(self, Gtk.WindowType.TOPLEVEL)
 
         self.current_match_index = None
+        self.matches = []
         self.set_name('translate_window')
         self.set_decorated(False)
         self.set_skip_pager_hint(True)
@@ -56,7 +58,31 @@ class TranslateWindow(Gtk.Window):
         self.set_decorated(False)
         self.move(window_x, window_y)
         self.resize(width, height)
-        GLib.idle_add(self.process_matches)
+        # TODO: test if this is needed!
+        GLib.idle_add(self.focus_in)
+
+    def add_match(self, sender, match):
+        # Only accept the match if all of its rects are within our geometry
+        for rect in match.rects:
+            if not rect_within(self.snapshot.geometry, rect):
+                debug('rejecting match outside of window: %s' % match)
+                return
+
+        debug('adding match %s %s' % (match, sender))
+
+        # Retain the current match if there is one.
+        current = self.current_match
+
+        self.matches.append(match)
+        self.matches.sort(key=_match_sort_key)
+
+        if current:
+            for i in xrange(len(self.matches)):
+                if self.matches[i] is current:
+                    self.current_match_index = i
+                    break
+
+        self.redo_pixbuf()
 
     def relative_rect(self, rect):
         (window_x, window_y, _, _) = self.snapshot.geometry
@@ -98,24 +124,29 @@ class TranslateWindow(Gtk.Window):
         sub.copy_area(0, 0, w, h, self.pixbuf, x, y)
         self.img.set_from_pixbuf(self.pixbuf)
 
-
     def set_current_match(self, idx, match):
         if self.current_match_index == idx:
             return
 
-        if self.current_match_index is not None:
-            prev_match = self.snapshot.matches[self.current_match_index]
-            for rect in prev_match.rects:
-                prev_rect = self.relative_rect(rect)
-                self.invert(prev_rect)
+        prev_match = self.current_match
+        if prev_match:
+            self.invert_for_match(prev_match)
 
         self.current_match_index = idx
-
-        for rect in match.rects:
-            rect = self.relative_rect(rect)
-            self.invert(rect)
+        self.invert_for_match(match)
 
         self.emit('lookup-requested', match)
+
+    def invert_for_match(self, match):
+        for rect in match.rects:
+            prev_rect = self.relative_rect(rect)
+            self.invert(prev_rect)
+
+    @property
+    def current_match(self):
+        if not self.current_match_index:
+            return None
+        return self.matches[self.current_match_index]
 
     def on_button_released(self, widget, event):
         debug('button released: %s' % ((event.button, event.x, event.y),))
@@ -135,9 +166,9 @@ class TranslateWindow(Gtk.Window):
         elif key == Gdk.KEY_Right:
             self.navigate(1)
         elif key == Gdk.KEY_Up:
-            self.navigate(-len(self.snapshot.matches) / 10)
+            self.navigate(-len(self.matches) / 10)
         elif key == Gdk.KEY_Down:
-            self.navigate(len(self.snapshot.matches) / 10)
+            self.navigate(len(self.matches) / 10)
         elif event.string:
             self.destroy()
 
@@ -151,40 +182,49 @@ class TranslateWindow(Gtk.Window):
         else:
             idx += offset
 
-        size = len(self.snapshot.matches)
+        size = len(self.matches)
         if idx >= size:
             idx -= size
         elif idx < 0:
             idx += size
 
-        self.set_current_match(idx, self.snapshot.matches[idx])
+        self.set_current_match(idx, self.matches[idx])
 
     def lookup_match(self, event):
         (window_x, window_y, _, _) = self.snapshot.geometry
         event_x = event.x
         event_y = event.y
 
+        # There can be multiple matches, e.g. if user clicked on 你 from 你好, then
+        # there will be a match for both 你 and 你好.
+        # Currently we will always favor the leftmost and longest match.
+        # We don't explicitly need code to do that, because they're already sorted that
+        # way.
+
         i = 0
-        for m in self.snapshot.matches:
+        for m in self.matches:
             for (x, y, w, h) in m.rects:
                 x -= window_x
                 y -= window_y
-                if x <= event_x < x+w and y <= event_y < y+h:
+                if x <= event_x < x + w and y <= event_y < y + h:
                     return m, i
             i += 1
 
         return None, None
 
-    def process_matches(self):
+    def focus_in(self):
         self.set_can_default(True)
         self.grab_default()
         self.img.set_can_focus(True)
         self.img.grab_focus()
 
+    def redo_pixbuf(self):
+        debug('BEGIN redraw...')
+
         (window_x, window_y, width, height) = self.snapshot.geometry
 
         copy_pb = []
-        for m in self.snapshot.matches:
+        for m in self.matches:
             for (x, y, w, h) in m.rects:
                 x -= window_x
                 y -= window_y
@@ -198,4 +238,15 @@ class TranslateWindow(Gtk.Window):
             (x, y, w, h) = rect
             pb.copy_area(0, 0, w, h, self.pixbuf, x, y)
 
+        match = self.current_match
+        if match:
+            self.invert_for_match(match)
+
         self.img.set_from_pixbuf(self.pixbuf)
+
+        debug('END redraw')
+
+
+def _match_sort_key(match):
+    (x, y, w, h) = match.rects[0]
+    return y, x, -len(match.text)

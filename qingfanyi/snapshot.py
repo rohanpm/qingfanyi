@@ -18,12 +18,23 @@ from gi.repository import Gdk
 
 from qingfanyi import debug
 from qingfanyi.atspi import get_text_object, visit_visible
-from qingfanyi.geom import any_rect_within
 from qingfanyi.text import may_contain_chinese
 
 
 class Snapshot(object):
-    def __init__(self, accessible_window, gdk_window, dic):
+    """This class represents a snapshot of a current window.
+
+    On creation, it will grab and store:
+
+    - geometry and screenshot of window
+    - handles to text objects likely containing Chinese text
+
+    This can take a few seconds.
+
+    Notably, this class does _not_ parse the Chinese text or query text rects
+    from the application, because that is too slow to be done synchronously.
+    """
+    def __init__(self, accessible_window, gdk_window):
         (_, _, w, h) = gdk_window.get_geometry()
         (_, x, y) = gdk_window.get_origin()
 
@@ -34,24 +45,7 @@ class Snapshot(object):
             raise IOError('Could not get pixbuf from active window')
 
         self.accessible_window = accessible_window
-        self.dic = dic
-        self._matches = None
-
-
-    @property
-    def matches(self):
-        if self._matches is None:
-            all_matches = _process_chinese(self.accessible_window, self.dic)
-            filtered_matches = [m
-                                for m in all_matches
-                                if any_rect_within(self.geometry, m.rects)]
-            debug('filtered %d matches to %d' % (len(all_matches), len(filtered_matches)))
-
-            debug('sorting matches by rect...')
-            sorted_matches = sorted(filtered_matches, key=_match_sort_key)
-            debug('...done sorting')
-            self._matches = sorted_matches
-        return self._matches
+        self.texts = _extract_texts(accessible_window)
 
 
 def _extract_texts(window):
@@ -74,25 +68,3 @@ def _extract_texts(window):
     visit_visible(window, collect_chinese)
 
     return out
-
-
-def _process_chinese(window, dic):
-    debug('BEGIN extracting texts from window...')
-    targets = _extract_texts(window)
-    debug('END extracting texts')
-    out = []
-
-    debug('BEGIN parsing texts')
-    for (text, text_object, accessible_object) in targets:
-        matched = dic.parse_text(text)
-        [m.init_rects(text_object) for m in matched]
-        out.extend(matched)
-        debug("found text: %s\n%s" % (text, matched))
-    debug('END parsing texts')
-
-    return out
-
-
-def _match_sort_key(match):
-    (x, y, w, h) = match.rects[0]
-    return y, x

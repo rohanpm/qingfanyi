@@ -26,6 +26,7 @@ from qingfanyi import debug
 from qingfanyi.dict import Dict
 from qingfanyi.popup_manager import PopupManager
 from qingfanyi.snapshot import Snapshot
+from qingfanyi.snapshot_matcher import SnapshotMatcher
 from qingfanyi.translate_window import TranslateWindow
 from qingfanyi.wm import active_window
 
@@ -70,11 +71,15 @@ class Translate(object):
         qingfanyi.styles.init()
 
         debug('taking snapshot')
-        snapshot = Snapshot(accessible_window, gdk_window, self.dic)
+        snapshot = Snapshot(accessible_window, gdk_window)
 
         debug('creating translate window')
         translate_win = TranslateWindow(snapshot)
         translate_win.show()
+
+        snapshot_matcher = SnapshotMatcher(snapshot, self.dic)
+        snapshot_matcher.connect('match-found', translate_win.add_match)
+        snapshot_matcher.start()
 
         PopupManager(translate_win)
 
