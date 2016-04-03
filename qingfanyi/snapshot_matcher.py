@@ -16,12 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gi.repository import GObject, GLib
 
+import time
+
 from qingfanyi import debug
 from qingfanyi.geom import join_rects
 from qingfanyi.match import Match
 from qingfanyi.text import may_contain_chinese
 
-BATCH_SIZE = 20
+BATCH_TIME = 0.2
 
 
 class SnapshotMatcher(GObject.Object):
@@ -50,7 +52,12 @@ class SnapshotMatcher(GObject.Object):
         matches = []
         out = True
 
-        for i in range(BATCH_SIZE):
+        begin = time.time()
+
+        def should_stop():
+            return time.time() - begin > BATCH_TIME
+
+        while True:
             try:
                 if self._cursor is None:
                     self._cursor = Cursor(*self._texts.next())
@@ -58,6 +65,8 @@ class SnapshotMatcher(GObject.Object):
             except StopIteration:
                 debug('no more text to match')
                 out = False
+                break
+            if should_stop():
                 break
 
         self.emit('matches-found', matches)
