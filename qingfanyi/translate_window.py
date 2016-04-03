@@ -98,17 +98,17 @@ class TranslateWindow(Gtk.Window):
         alpha = sub.get_has_alpha()
         istride = sub.get_rowstride()
         bytes_per_pixel = 4 if alpha else 3
-        ostride = w*bytes_per_pixel
-        bytes_total = ostride*h
+        ostride = w * bytes_per_pixel
+        bytes_total = ostride * h
 
         npix = bytearray(bytes_total)
         for i in range(h):
-            for j in range(0, w*bytes_per_pixel, bytes_per_pixel):
-                npix[i*ostride + j]     = 255 - ord(pix[i*istride + j])
-                npix[i*ostride + j + 1] = 255 - ord(pix[i*istride + j + 1])
-                npix[i*ostride + j + 2] = 255 - ord(pix[i*istride + j + 2])
+            for j in range(0, w * bytes_per_pixel, bytes_per_pixel):
+                npix[i * ostride + j] = 255 - ord(pix[i * istride + j])
+                npix[i * ostride + j + 1] = 255 - ord(pix[i * istride + j + 1])
+                npix[i * ostride + j + 2] = 255 - ord(pix[i * istride + j + 2])
                 if alpha:
-                    npix[i*ostride + j + 3] = 255
+                    npix[i * ostride + j + 3] = 255
 
         bytes = GLib.Bytes.new(npix)
         debug('have bytes: %s for rect: %s' % (bytes.get_size(), rect))
