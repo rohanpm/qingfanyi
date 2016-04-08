@@ -19,6 +19,7 @@ from gi.repository import GdkPixbuf
 
 from qingfanyi import debug
 from qingfanyi.geom import rect_within
+from qingfanyi.navigator import Navigator
 
 
 class TranslateWindow(Gtk.Window):
@@ -30,8 +31,6 @@ class TranslateWindow(Gtk.Window):
     def __init__(self, snapshot, snapshot_matcher):
         Gtk.Window.__init__(self, Gtk.WindowType.TOPLEVEL)
 
-        self.current_match_index = None
-        self.matches = []
         self.set_name('translate_window')
         self.set_decorated(False)
         self.set_skip_pager_hint(True)
@@ -63,6 +62,9 @@ class TranslateWindow(Gtk.Window):
         self.unmatch_count = 0
         snapshot_matcher.connect('matches-found', self.add_matches)
 
+        self.navigator = Navigator(self.snapshot.geometry)
+        self.navigator.connect('current_match_changed', self.on_current_match_changed)
+
     def add_matches(self, sender, matches):
 
         def accept_match(match):
@@ -80,33 +82,14 @@ class TranslateWindow(Gtk.Window):
             # If we previously have found something, and now we repeatedly cannot match
             # anything, then tell the sender to stop - probably it's wasting time
             # processing text far off the screen
-            if self.matches and self.unmatch_count > 5:
+            if self.navigator.matches and self.unmatch_count > 5:
                 debug('sender keeps sending offscreen stuff. asking it to stop.')
                 sender.stop()
             return
 
         self.unmatch_count = 0
-
-        debug('BEGIN add %d matches' % len(matches))
-
-        # Retain the current match if there is one.
-        current = self.current_match
-
-        self.matches.extend(matches)
-        self.matches.sort(key=_match_sort_key)
-
-        if current:
-            # Update current_match_index to new correct value.
-            # It could be anywhere from its previous value up to +len(matches).
-            for i in range(self.current_match_index,
-                           self.current_match_index + len(matches) + 1):
-                if self.matches[i] is current:
-                    self.current_match_index = i
-                    break
-
+        self.navigator.add_matches(matches)
         self.update_pixbuf_for_matches(matches)
-
-        debug('END add matches')
 
     def relative_rect(self, rect):
         (window_x, window_y, _, _) = self.snapshot.geometry
@@ -148,37 +131,26 @@ class TranslateWindow(Gtk.Window):
         sub.copy_area(0, 0, w, h, self.pixbuf, x, y)
         self.img.set_from_pixbuf(self.pixbuf)
 
-    def set_current_match(self, idx, match):
-        if self.current_match_index == idx:
-            return
+    def on_current_match_changed(self, _sender, prev_match, match):
+        debug('match has changed from %s to %s' % (prev_match, match))
 
-        prev_match = self.current_match
         if prev_match:
             self.invert_for_match(prev_match)
 
-        self.current_match_index = idx
-        self.invert_for_match(match)
-
-        self.emit('lookup-requested', match)
+        if match:
+            self.invert_for_match(match)
+            self.emit('lookup-requested', match)
 
     def invert_for_match(self, match):
         for rect in match.rects:
             prev_rect = self.relative_rect(rect)
             self.invert(prev_rect)
 
-    @property
-    def current_match(self):
-        if not self.current_match_index:
-            return None
-        return self.matches[self.current_match_index]
-
     def on_button_released(self, widget, event):
         debug('button released: %s' % ((event.button, event.x, event.y),))
-        (match, idx) = self.lookup_match(event)
-        if match:
-            debug(' clicked on: %s' % match)
-            self.set_current_match(idx, match)
-        else:
+        found = self.navigator.set_current_match_by_point(event.x, event.y)
+        if not found:
+            # clicked somewhere with no match; close window
             self.destroy()
 
     def on_key_pressed(self, widget, event):
@@ -186,55 +158,15 @@ class TranslateWindow(Gtk.Window):
 
         key = event.keyval
         if key == Gdk.KEY_Left:
-            self.navigate(-1)
+            self.navigator.navigate_offset(-1)
         elif key == Gdk.KEY_Right:
-            self.navigate(1)
+            self.navigator.navigate_offset(1)
         elif key == Gdk.KEY_Up:
-            self.navigate(-len(self.matches) / 10)
+            self.navigator.navigate_offset(-len(self.matches) / 10)
         elif key == Gdk.KEY_Down:
-            self.navigate(len(self.matches) / 10)
+            self.navigator.navigate_offset(len(self.matches) / 10)
         elif event.string:
             self.destroy()
-
-    def navigate(self, offset):
-        idx = self.current_match_index
-        if idx is None:
-            if offset == 1:
-                idx = 0
-            else:
-                idx = -1
-        else:
-            idx += offset
-
-        size = len(self.matches)
-        if idx >= size:
-            idx -= size
-        elif idx < 0:
-            idx += size
-
-        self.set_current_match(idx, self.matches[idx])
-
-    def lookup_match(self, event):
-        (window_x, window_y, _, _) = self.snapshot.geometry
-        event_x = event.x
-        event_y = event.y
-
-        # There can be multiple matches, e.g. if user clicked on 你 from 你好, then
-        # there will be a match for both 你 and 你好.
-        # Currently we will always favor the leftmost and longest match.
-        # We don't explicitly need code to do that, because they're already sorted that
-        # way.
-
-        i = 0
-        for m in self.matches:
-            for (x, y, w, h) in m.rects:
-                x -= window_x
-                y -= window_y
-                if x <= event_x < x + w and y <= event_y < y + h:
-                    return m, i
-            i += 1
-
-        return None, None
 
     def focus_in(self):
         self.set_can_default(True)
@@ -249,7 +181,7 @@ class TranslateWindow(Gtk.Window):
 
         copy_pb = []
 
-        current_match = self.current_match
+        current_match = self.navigator.current_match
         # Note: could improve to only process current_match if it overlaps.
         # But time savings are probably negligible.
         if current_match:
@@ -278,6 +210,3 @@ class TranslateWindow(Gtk.Window):
         debug('END redraw')
 
 
-def _match_sort_key(match):
-    (x, y, w, h) = match.rects[0]
-    return y, x, -len(match.text)
