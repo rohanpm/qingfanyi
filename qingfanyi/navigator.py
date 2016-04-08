@@ -79,6 +79,9 @@ class Navigator(GObject.Object):
         return match
 
     def navigate_offset(self, offset):
+        if not self.matches:
+            return
+
         idx = prev_idx = self.current_match_index
         if idx is None:
             if offset == 1:
@@ -89,9 +92,9 @@ class Navigator(GObject.Object):
             idx += offset
 
         size = len(self.matches)
-        if idx >= size:
+        while idx >= size:
             idx -= size
-        elif idx < 0:
+        while idx < 0:
             idx += size
 
         debug('navigate from %s by %s gives %s' % (prev_idx, offset, idx))
