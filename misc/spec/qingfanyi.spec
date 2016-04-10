@@ -43,5 +43,8 @@ provide Chinese translations in a popup.
 /usr/bin/qfy
 
 %changelog
+* Sun Apr 3 2016 Rohan McGovern <rohan@mcgovern.id.au> - 1.2.0-1
+- Version 1.2.0
+
 * Sun Mar 20 2016 Rohan McGovern <rohan@mcgovern.id.au> - 1.1.0-1
 - Version 1.1.0
