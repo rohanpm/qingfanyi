@@ -5,7 +5,7 @@
 %global __os_install_post /usr/lib/rpm/brp-compress %{nil}
 
 Name:           qingfanyi
-Version:        1.2.0
+Version:        1.2.1
 Release:        1%{?dist}
 Summary:        %{sum}
 
@@ -43,6 +43,10 @@ provide Chinese translations in a popup.
 /usr/bin/qfy
 
 %changelog
+* Sun Apr 10 2016 Rohan McGovern - 1.2.1-1
+- Version 1.2.1
+- [issue #22] fix wrapping problem in keyboard navigation
+
 * Sun Apr 3 2016 Rohan McGovern <rohan@mcgovern.id.au> - 1.2.0-1
 - Version 1.2.0
 
