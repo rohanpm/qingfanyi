@@ -107,7 +107,7 @@ def _pinyin_to_diacritic(word):
         # Weird, a word without vowels?
         debug('vowel-less word? %s' % word)
         return word
-    (c, index) = min(indexes, key=lambda (c, i): i)
+    (c, index) = min(indexes, key=lambda x: x[1])
 
     dia = _TONE_DIACRITIC[tone]
     offset = len(c)

@@ -16,9 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import print_function
 
-import marisa_trie
+import marisa
 
 import os
+import json
 from pkg_resources import resource_stream
 
 import qingfanyi.dict
@@ -26,7 +27,7 @@ from qingfanyi import debug
 
 
 def _extract_keys(line, lineno):
-    splits = line.split(' ', 2)
+    splits = line.split(b' ', 2)
     if len(splits) != 3:
         raise ValueError("Line %d not in CEDICT format:\n%s" % (lineno, line))
     return splits[0:2]
@@ -61,28 +62,45 @@ def build(in_filename, in_file, logger=None,
 
     logger('Writing dict ...')
     _ensure_index_dir()
+
+    ks = marisa.Keyset()
+
     with open(out_dict_filename, 'wb') as dict_out:
         index = 0
-        trie_keys = []
-        trie_values = []
+        # trie_keys = []
+        num_keys = 0
+        trie_values = {}
         lineno = 0
         for line in in_file:
             lineno += 1
-            if line.startswith('#'):
+            if line.startswith(b'#'):
                 continue
             if not line.strip():
                 continue
             keys = _extract_keys(line, lineno)
-            for key in keys:
-                key = unicode(key, 'utf-8')
-                trie_keys.append(key)
-                trie_values.append((index,))
+            for key_bytes in keys:
+                key_str = str(key_bytes, 'utf-8')
+                ks.push_back(key_str)
+
+                # trie_keys.append(key_str)
+                trie_values.setdefault(key_str, []).append(index)
             dict_out.write(line)
             index += len(line)
 
     logger('Writing index ...')
-    marisa_trie.RecordTrie('<L', zip(trie_keys, trie_values)).save(
-        out_index_filename)
+    trie = marisa.Trie()
+    trie.build(ks)
+
+    trie.save(out_index_filename)
+
+    key_id_to_index = [0]*ks.num_keys()
+    for i in range(0, ks.num_keys()):
+        key_id = ks.key_id(i)
+        key_str = ks.key_str(i)
+        key_id_to_index[key_id] = list(set(trie_values[key_str]))
+
+    with open(out_index_filename, mode='a') as f:
+        json.dump(key_id_to_index, f, separators=(',', ':'))
 
     logger('Done!')
 

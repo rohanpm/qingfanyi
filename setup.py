@@ -14,10 +14,10 @@ setup(
                       'It uses the AT-SPI accessibility APIs on Linux desktop systems '
                       'to capture Chinese text on the currently active window and '
                       'provide an interactive lookup on demand.'),
-    install_requires=['ewmh==0.1.3',
+    install_requires=['ewmh==0.1.3'],
                       #'pyatspi',
                       # 'gi',
-                      'marisa_trie==0.7.2'],
+                      #'marisa',
     entry_points={
         'console_scripts': [
             'qfy=qingfanyi.process.main:run'
