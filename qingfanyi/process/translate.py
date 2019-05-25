@@ -52,7 +52,7 @@ class Translate(object):
         self.error = None
         try:
             self.run()
-        except StandardError as e:
+        except Exception as e:
             traceback.print_exc()
             self.error = e
         finally:

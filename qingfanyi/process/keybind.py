@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import Queue
+from queue import Full
 
 from gi.repository import Keybinder
 from gi.repository import Gtk
@@ -34,6 +34,6 @@ def _on_shortcut(event, queue):
     debug('shortcut %s' % event)
     try:
         queue.put_nowait(event)
-    except Queue.Full:
+    except Full:
         # this means earlier shortcut is still being processed
         debug('  dropped shortcut')

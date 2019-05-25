@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import re
 
-_CJK_TEXT_PATTERN = re.compile(ur'''
+_CJK_TEXT_PATTERN = re.compile(r'''
      [\u4e00-\u9fff]          # CJK Unified Ideographs
    | [\u3400-\u4dff]          # CJK Unified Ideographs Extension A
    | [\U00020000-\U0002a6df]  # CJK Unified Ideographs Extension B

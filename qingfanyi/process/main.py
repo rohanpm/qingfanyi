@@ -62,7 +62,7 @@ def run():
         debug('invoke translate')
         try:
             translate_pool.apply(_run_translate_process)
-        except StandardError as e:
+        except Exception as e:
             debug('failed: %s' % e)
 
     if stop[0] == signal.SIGUSR1:

@@ -58,7 +58,6 @@ def _extract_texts(window):
 
         text = text_object.getText(0, -1)
         # NOTE: what if app is not using utf-8?
-        text = unicode(text, 'utf-8')
         debug('TEXT: %s' % text)
         if not may_contain_chinese(text):
             return

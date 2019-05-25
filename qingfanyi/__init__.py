@@ -33,7 +33,7 @@ def debug(msg):
             msg = msg()
         sys.stdout.flush()
         s = 'debug: [%s] %s: %s\n' % (os.getpid(), datetime.datetime.now(), msg)
-        if isinstance(s, unicode):
-            s = s.encode('utf-8', errors='replace')
+        if isinstance(s, bytes):
+            s = str(s, 'utf-8', errors='replace')
         sys.stderr.write(s)
         sys.stderr.flush()

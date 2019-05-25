@@ -28,7 +28,7 @@ def init():
 
 
 # https://developer.gnome.org/gtk3/stable/GtkCssProvider.html
-_DATA = '''
+_DATA = b'''
 
 #popup_window {
   border-style: solid;

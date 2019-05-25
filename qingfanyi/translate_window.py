@@ -75,7 +75,7 @@ class TranslateWindow(Gtk.Window):
                     return False
             return True
 
-        matches = filter(accept_match, matches)
+        matches = [m for m in matches if accept_match(m)]
 
         if not matches:
             self.unmatch_count += 1
@@ -111,9 +111,9 @@ class TranslateWindow(Gtk.Window):
         npix = bytearray(bytes_total)
         for i in range(h):
             for j in range(0, w * bytes_per_pixel, bytes_per_pixel):
-                npix[i * ostride + j] = 255 - ord(pix[i * istride + j])
-                npix[i * ostride + j + 1] = 255 - ord(pix[i * istride + j + 1])
-                npix[i * ostride + j + 2] = 255 - ord(pix[i * istride + j + 2])
+                npix[i * ostride + j] = 255 - pix[i * istride + j]
+                npix[i * ostride + j + 1] = 255 - pix[i * istride + j + 1]
+                npix[i * ostride + j + 2] = 255 - pix[i * istride + j + 2]
                 if alpha:
                     npix[i * ostride + j + 3] = 255
 

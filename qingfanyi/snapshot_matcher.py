@@ -68,7 +68,7 @@ class SnapshotMatcher(GObject.Object):
         while True:
             try:
                 if self._cursor is None:
-                    self._cursor = Cursor(*self._texts.next())
+                    self._cursor = Cursor(*next(self._texts))
                 self._cursor = self._cursor_next(self._cursor, matches)
             except StopIteration:
                 debug('no more text to match')
