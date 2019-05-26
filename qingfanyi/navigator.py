@@ -23,7 +23,7 @@ class Navigator(GObject.Object):
     """Holds a sequence of matches and manages navigation through them."""
     __gsignals__ = {
         # current selected match changed from (old) to (new)
-        'current_match_changed': (GObject.SIGNAL_RUN_LAST, GObject.TYPE_NONE,
+        'current_match_changed': (GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE,
                                   (GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT))
     }
 
