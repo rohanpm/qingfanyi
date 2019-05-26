@@ -4,12 +4,6 @@ qingfanyi
 *qingfanyi* or *qfy* is an interactive Chinese to English translation
 tool for Linux desktop systems.
 
-Installation
-============
-
-Fedora and CentOS users may install qingfanyi RPMs from
-[this copr project](https://copr.fedorainfracloud.org/coprs/rohanpm/qingfanyi/).
-
 Usage
 =====
 

@@ -13,13 +13,15 @@ License:        GPLv3+
 URL:            https://github.com/rohanpm/%{srcname}
 Source0:        https://github.com/rohanpm/%{srcname}/archive/v%{version}.tar.gz
 
-BuildRequires:  python2-devel
-BuildRequires:  python-setuptools
+BuildRequires: python3-pyatspi
+BuildRequires: python3-gobject-base
+BuildRequires: python3-marisa
+BuildRequires: keybinder3
 
-Requires:       python2-ewmh
-Requires:       python2-marisa-trie
-Requires:       pyatspi
-Requires:       pygobject3-base
+Requires: python3-pyatspi
+Requires: python3-gobject-base
+Requires: python3-marisa
+Requires: keybinder3
 
 %description
 An interactive Chinese to English dictionary lookup tool.
@@ -31,15 +33,19 @@ provide Chinese translations in a popup.
 %autosetup -n %{srcname}-%{version}
 
 %build
-%py2_build
+%py3_build
+
+%check
+%{__python3} -m pytest -v
 
 %install
-%py2_install
+%py3_install
 
 %files
 %license LICENSE.GPL
 %doc README.md
-%{python2_sitelib}/*
+%{python3_sitelib}/qingfanyi/
+%{python3_sitelib}/qingfanyi-*.egg-info/
 /usr/bin/qfy
 
 %changelog
