@@ -33,7 +33,9 @@ class FakeAccessibleObject(object):
 
 class VisibleObject(FakeAccessibleObject):
     def getState(self):
-        return StateSet(STATE_SHOWING)
+        ss = StateSet()
+        ss.add(STATE_SHOWING)
+        return ss
 
 
 class InvisibleObject(FakeAccessibleObject):
