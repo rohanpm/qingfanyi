@@ -113,5 +113,5 @@ def init():
 
     _INSTANCE = Translate()
 
-    thread = threading.Thread(target=_INSTANCE.run_event_loop)
+    thread = threading.Thread(target=_INSTANCE.run_event_loop, daemon=True)
     thread.start()
