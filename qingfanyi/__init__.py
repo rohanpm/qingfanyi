@@ -18,6 +18,9 @@ import datetime
 import os
 import sys
 
+import gi
+gi.require_version('Gtk', '3.0')
+
 _DEBUG = 'QFY_DEBUG' in os.environ and os.environ['QFY_DEBUG'] == '1'
 
 
