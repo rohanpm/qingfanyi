@@ -162,9 +162,9 @@ class TranslateWindow(Gtk.Window):
         elif key == Gdk.KEY_Right:
             self.navigator.navigate_offset(1)
         elif key == Gdk.KEY_Up:
-            self.navigator.navigate_offset(-len(self.matches) / 10)
+            self.navigator.navigate_offset(int(-len(self.navigator.matches) / 10))
         elif key == Gdk.KEY_Down:
-            self.navigator.navigate_offset(len(self.matches) / 10)
+            self.navigator.navigate_offset(int(len(self.navigator.matches) / 10))
         elif event.string:
             self.destroy()
 
