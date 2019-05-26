@@ -17,7 +17,6 @@
 import time
 
 import Xlib.display
-import ewmh
 import pyatspi
 from Xlib import X
 from gi.repository import Gdk, GLib, GdkX11
@@ -68,15 +67,26 @@ def active_window(attempts=5):
 
 def _guess_active_window():
     display = Xlib.display.Display()
-    wm = ewmh.EWMH(display)
-    active_win = wm.getActiveWindow()
+    root = display.screen().root
+
+    active_win = None
+
+    active_win_atom = root.get_full_property(
+        display.get_atom('_NET_ACTIVE_WINDOW'), X.AnyPropertyType)
+    if active_win_atom and active_win_atom.value:
+        active_win = display.create_resource_object('window', active_win_atom.value[0])
 
     if not active_win:
-        debug('no active window from ewmh')
+        debug('no active window found by properties')
         return None, None
 
     window_names = []
-    window_names.append(wm.getWmName(active_win))
+
+    atom = active_win.get_full_property(
+        display.get_atom('_NET_WM_VISIBLE_NAME'), X.AnyPropertyType)
+
+    if atom:
+        window_names.append(atom.value)
 
     wm_name = active_win.get_full_property(display.get_atom('WM_NAME'), X.AnyPropertyType)
     debug('WM_NAME original %s' % wm_name.value)
